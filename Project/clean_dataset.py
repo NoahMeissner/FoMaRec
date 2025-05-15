@@ -1,7 +1,6 @@
 #@Noah Meißner 14.05.2025
 import pandas as pd
 import numpy as np
-import re
 
 '''
 Wir erhalten ein Dataframe mit den Columns:
@@ -13,10 +12,10 @@ Wir erhalten ein Dataframe mit den Columns:
 
 Ziel des Skripts ist die vereinheitlichung, löschen von unötigen Daten
 '''
-columns = [['title', 'Bewertungen',
+columns = ['title', 'Bewertungen',
         'Aufgerufe', 'average', 'furPersonen', 'zutaten', 'zubereitung', 'Schwierigkeitsgrad',
        'Zubereitungszeit', 'Preiskategorie', 'kcal', 'Eiweiss',
-       'Kohlenhydrate', 'Fett', 'for_diabetes']]
+       'Kohlenhydrate', 'Fett', 'for_diabetes']
 
 class DataClean:
     def __init__(self, raw_data):
@@ -35,8 +34,8 @@ class DataClean:
             'Zubereitungszeit': 'cooking_time',
             'Preiskategorie': 'price_category', 
             'Eiweiss': 'protein',
-            'Kohlenhydrate': 'Carbohydrates',
-            'Fett': 'Fat',
+            'Kohlenhydrate': 'carbohydrates',
+            'Fett': 'fat',
             'kcal':'kcal'
         })
 
@@ -60,41 +59,25 @@ class DataClean:
         df['price_category'] = df['price_category'].map(translation)
         return df
     
-    def edit_cooking_time(self, df):
-        max_time = 4000
-        return df[df['cooking_time']>max_time]
-    
-    def edit_protein(self, df):
-        max= 1000
-        return df[df['protein']>max]
-    
-    def edit_carbohydrates(self, df):
-        max= 2000
-        return df[df['Carbohydrates']>max]
-    
-    def edit_fat(self, df):
-        max= 2000
-        return df[df['Fat']>max]
-    
-    def edit_persone_number(self, df):
+    def edit_person_number(self, df):
         df.loc[df['persone_number'] > 30, 'persone_number'] = np.nan
         return df
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
+    
+    def edit_numbers(self, df, number, column):
+        return df[df[column]<number]
+    
+    def edit_carbs(self, df):
+        ls = [['cooking_time',4000],['protein',1000],['carbohydrates',2000],['fat',2000]]
+        for carb in ls:
+            column = carb[0]
+            number = carb[1]
+            df = self.edit_numbers(df, number, column)
+        return df
+    
+    def preprocess_data(self):
+        df = self.rename(self.raw_data)
+        df = self.rename_difficulty(df)
+        df = self.edit_price_category(df)
+        df = self.edit_carbs(df)
+        df = self.edit_person_number(df)
+        return df
