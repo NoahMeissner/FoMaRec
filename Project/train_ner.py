@@ -3,8 +3,9 @@ from spacy.tokens import DocBin
 from spacy.training import Example
 from spacy.util import minibatch, compounding
 import random
+import re
 
-LABELS = ["wrong", "type", "ingredients"]
+LABELS = ["Number","Units", "Type", "Ingredients"]
 
 def filter_overlapping_spans(spans):
     spans = sorted(spans, key=lambda span: (span.start, -span.end))
@@ -24,21 +25,48 @@ def create_training_data(train_data):
 
     for text, annot in train_data:
         doc = nlp.make_doc(text)
-        ents = []
-        for start, end, label in annot.get("entities"):
-            span = doc.char_span(start, end, label=label, alignment_mode="expand")
-            if span is None:
-                print(f"Warnung: Ungültiger Span im Text: '{text[start:end]}' ({start}, {end})")
+        raw_entities = annot.get("entities", [])
+        
+        # Stufe 1: Filterung auf Zeichenebene
+        filtered_entities = []
+        for ent in sorted(raw_entities, key=lambda x: (x[0], -x[1])):
+            start, end, label = ent
+            if not any(s < end and e > start for s, e, _ in filtered_entities):
+                filtered_entities.append(ent)
             else:
-                ents.append(span)
-        ents = filter_overlapping_spans(ents)
-        doc.ents = ents
-        db.add(doc)
+                print(f"⚠️ Überschneidung auf Zeichenebene entfernt: {ent}")
+
+        # Stufe 2: Konvertierung zu Spans mit Token-Validierung
+        spans = []
+        for start, end, label in filtered_entities:
+            span = doc.char_span(
+                start, 
+                end, 
+                label=label,
+                alignment_mode="contract"  # Präzisere Ausrichtung
+            )
+            if span:
+                spans.append(span)
+            else:
+                print(f"⚠️ Ungültiger Span: '{text[start:end]}' ({start}-{end})")
+
+        # Stufe 3: Endgültige Token-basierte Filterung
+        spans = filter_overlapping_spans(spans)
+        
+        try:
+            doc.ents = spans
+            db.add(doc)
+        except Exception as e:
+            print(f"❌ Kritischer Fehler bei: '{text}'\n{'-'*40}")
+            print(f"Entitäten: {filtered_entities}")
+            print(f"Spans: {[(s.start_char, s.end_char, s.label_) for s in spans]}")
+            print(f"Fehlerdetails: {str(e)}\n{'='*40}")
+            
     return db
 
-def train_ner(train_data, labels, iterations=20):
+def train_ner(train_docs, labels, iterations=20):
     nlp = spacy.blank("de")
-
+    
     if "ner" not in nlp.pipe_names:
         ner = nlp.add_pipe("ner")
     else:
@@ -49,30 +77,36 @@ def train_ner(train_data, labels, iterations=20):
 
     optimizer = nlp.begin_training()
 
+    # Create examples using the processed docs
+    examples = []
+    for doc in train_docs:
+        # The reference doc has correct entities, predicted doc is tokenized
+        predicted_doc = nlp.make_doc(doc.text)
+        example = Example(predicted_doc, doc)
+        examples.append(example)
+
     for itn in range(iterations):
-        random.shuffle(train_data)
+        random.shuffle(examples)
         losses = {}
-        batches = minibatch(train_data, size=compounding(4.0, 32.0, 1.001))
-
+        batches = minibatch(examples, size=compounding(4.0, 32.0, 1.001))
         for batch in batches:
-            examples = []
-            for text, annotations in batch:
-                doc = nlp.make_doc(text)
-                example = Example.from_dict(doc, annotations)
-                examples.append(example)
-
-            nlp.update(examples, sgd=optimizer, drop=0.2, losses=losses)
-
+            nlp.update(batch, sgd=optimizer, drop=0.2, losses=losses)
         print(f"Iteration {itn+1}/{iterations} - Losses: {losses}")
 
     return nlp
+
+
 
 def train_model(TRAIN_DATA):
     db = create_training_data(TRAIN_DATA)
     db.to_disk("./train.spacy")
     print("Spacy erstellt Trainingsdaten")
+    
+    nlp = spacy.blank("de")
+    train_docs = list(db.get_docs(nlp.vocab))
+    
     print("Trainiere NER-Modell...")
-    nlp_model = train_ner(TRAIN_DATA, LABELS)
+    nlp_model = train_ner(train_docs, LABELS)
     print("Speichere Modell...")
     nlp_model.to_disk("model/ingredients_ner_model")
     return nlp_model
