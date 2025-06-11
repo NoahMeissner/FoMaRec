@@ -2,8 +2,9 @@
 
 import json
 import re
+from data_structure.paths import NER_TRA
 
-PATH = "Data/Ingredients/Training/Gemini.json"
+PATH = NER_TRA/"dataset.json"
 
 '''
 TRAIN_DATA = [

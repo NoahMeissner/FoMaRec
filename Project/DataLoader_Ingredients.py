@@ -4,6 +4,7 @@ from clean_dataset import DataClean
 import random
 import os
 import re
+from data_structure.paths import INGREDIENTS_DIR
 
 """
 In dieser File wird ein Trainingsdatensatz generiert, sowie ein Testdatensatz um die Model antworten zu analysieren
@@ -13,9 +14,9 @@ In dieser File wird ein Trainingsdatensatz generiert, sowie ein Testdatensatz um
 class DataLoader:
 
     def __init__(self, dataset):
-        self.dataset = dataset.sample(n=5000, random_state=42)
-        self.train_path = 'Data/Ingredients/train_labels.txt'
-        self.test_path = 'Data/Ingredients/test_labels.txt'
+        self.dataset = dataset.sample(n=100000, random_state=42)
+        self.train_path = INGREDIENTS_DIR/'train_labels.txt'
+        self.test_path = INGREDIENTS_DIR/'test_labels.txt'
 
     def split_single_ingrd(self, txt):
         simplfd_txt = txt.lower()
@@ -30,7 +31,7 @@ class DataLoader:
         all_ingredients = []
         id = 0
         for index, row in df.iterrows():
-            if id < 13000:
+            if id < len(df):
                 id+=1
                 all_ingredients.extend(self.split_single_ingrd(row['ingredients']))
             else:
@@ -39,13 +40,13 @@ class DataLoader:
         unique_ingredients = list(set(all_ingredients))
         random.shuffle(unique_ingredients) 
 
-        total_needed = 10000 + 1000
+        total_needed = 50000 + 1000
         if len(unique_ingredients) < total_needed:
             print(unique_ingredients)
-            raise ValueError(f"Nicht genug eindeutige Zutaten gefunden ({len(unique_ingredients)} < {total_needed}){len(all_ingredients)}")
+            raise ValueError(f"Not enough unique identities ({len(unique_ingredients)} < {total_needed}){len(all_ingredients)}Dataset{len(df)}")
 
-        train_labels = unique_ingredients[:10000]
-        test_labels = unique_ingredients[10000:total_needed]
+        train_labels = unique_ingredients[:50000]
+        test_labels = unique_ingredients[50000:total_needed]
 
         with open(self.train_path, 'w', encoding='utf-8') as f:
             for label in train_labels:

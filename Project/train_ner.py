@@ -4,6 +4,8 @@ from spacy.training import Example
 from spacy.util import minibatch, compounding
 import random
 import re
+from data_structure.paths import SPACY_MODEL, SPACY_TRAIN_DATA
+
 
 LABELS = ["Number","Units", "Type", "Ingredients"]
 
@@ -99,21 +101,23 @@ def train_ner(train_docs, labels, iterations=20):
 
 def train_model(TRAIN_DATA):
     db = create_training_data(TRAIN_DATA)
-    db.to_disk("./train.spacy")
-    print("Spacy erstellt Trainingsdaten")
+    db.to_disk(SPACY_TRAIN_DATA)
+    print("create Training Data")
     
     nlp = spacy.blank("de")
     train_docs = list(db.get_docs(nlp.vocab))
     
-    print("Trainiere NER-Modell...")
+    print("Train NER-Modell...")
     nlp_model = train_ner(train_docs, LABELS)
-    print("Speichere Modell...")
-    nlp_model.to_disk("model/ingredients_ner_model")
+    print("Save Model...")
+    nlp_model.to_disk(SPACY_MODEL)
     return nlp_model
 
 def test_model(input=None, model=None):
     if model is None:
-        model = spacy.load("model/ingredients_ner_model")
+        model = spacy.load(SPACY_MODEL)
     doc = model(input)
+    res = []
     for ent in doc.ents:
-        print(ent.text, ent.label_)
+        res.append([ent.text, ent.label_])
+    return res
