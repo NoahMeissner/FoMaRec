@@ -94,7 +94,8 @@ def normalize_ingredients(ls_ing):
                 a = 1
         try:
             if len(gemini_ls)> 0:
-                final.extend(clean_model_output(str(request(prompt.replace("$DATA$",str(gemini_ls))))))
+                a=1
+                #final.extend(clean_model_output(str(request(prompt.replace("$DATA$",str(gemini_ls))))))
         except Exception as e:
             print("API ERROR",e)
         ls.extend(final)

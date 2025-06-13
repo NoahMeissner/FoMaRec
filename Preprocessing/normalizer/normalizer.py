@@ -64,5 +64,12 @@ class Normalization:
             return ({item.upper() : {"unit":"", "number":"", "original":item}}, len(ls_ing))    
     def get_stats(self):
         return {"equal": self.equal, "under": self.under, "over": self.over, "zero":self.zero}
+    
+    def tokenize(self, item):
+        dict_ner = get_ner(self.bert, item)
+        original = dict_ner['original']
+        ner_labels = dict_ner['ner'][original]['entities']
+        print(ner_labels)
+        print(dict_ner)
 
 

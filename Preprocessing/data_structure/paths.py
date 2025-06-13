@@ -11,6 +11,7 @@ TRAIN = BASE_DIR/"train"
 
 # Models
 SPACY_MODEL = MODELS/ "ingredients_ner_model"
+BERT_MODEL = MODELS / "modern_bert/model.pt"
 SPACY_TRAIN_DATA = TRAIN / "train.spacy"
 
 #Datasets

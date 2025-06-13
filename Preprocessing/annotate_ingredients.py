@@ -10,7 +10,7 @@ import os
 import ast
 from data_structure.DataType import DataType
 from data_structure.model_name import ModelName
-from request.Loader.load_ner import  ner_loader, ner_safer
+from loader.load_ner import  ner_loader, ner_safer
 import re
 from data_structure.paths import RAW_SET, NER_TRA, NER_PRE
 

@@ -6,6 +6,7 @@ from transformers import BertTokenizerFast, BertForTokenClassification
 from datasets import Dataset
 import torch
 from transformers import TrainingArguments, Trainer
+from data_structure.paths import BERT_MODEL
 
 
 
@@ -15,7 +16,8 @@ class Bert:
         model_name = "answerdotai/ModernBERT-large"
         self.id2label = {0: 'O', 1: 'B-Ingredients', 2: 'I-Ingredients', 3: 'B-Number', 4: 'I-Number', 5: 'B-Type', 6: 'I-Type', 7: 'B-Units', 8: 'I-Units'}
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = torch.load('model/modern_bert/model.pt', map_location=torch.device('cpu'), weights_only=False)
+        print(BERT_MODEL)
+        self.model = torch.load(BERT_MODEL, map_location=torch.device('cpu'), weights_only=False)
         self.model.eval()
 
 
