@@ -12,7 +12,29 @@ Icon
 
 Data/
 model/
+# Eigener Dataset-Ordner
 system/foodrec/config/dataset/
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Python Virtual Environments
+venv/
+.env/
+.venv/
+env/
+
+# Cache-Dateien
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Sonstiges
+*.DS_Store
 # Thumbnails
 ._*
 
