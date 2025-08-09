@@ -12,6 +12,7 @@ Icon
 
 Data/
 model/
+system/foodrec/config/dataset/
 # Thumbnails
 ._*
 
