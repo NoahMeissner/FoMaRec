@@ -13,7 +13,25 @@ Icon
 Data/
 model/
 # Eigener Dataset-Ordner
+# Eigener Dataset-Ordner
 system/foodrec/config/dataset/
+
+# Virtuelle Umgebungen (lokal & im system-Ordner)
+venv/
+.env/
+.venv/
+env/
+system/myenv/
+
+# Python Cache & Build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+build/
+dist/
 
 # Jupyter Notebook Checkpoints
 .ipynb_checkpoints/
@@ -21,11 +39,8 @@ system/foodrec/config/dataset/
 # VS Code
 .vscode/
 
-# Python Virtual Environments
-venv/
-.env/
-.venv/
-env/
+# OS-Dateien
+*.DS_Store
 
 # Cache-Dateien
 __pycache__/
