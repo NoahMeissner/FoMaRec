@@ -1,8 +1,8 @@
 from pathlib import Path
 
 # Basisverzeichnis
-BASE_DIR = Path(__file__).resolve().parent.parent
-
+'BASE_DIR = Path(__file__).resolve().parent.parent
+'
 # Datenverzeichnisse
 DATA_DIR = BASE_DIR / "Data"
 INGREDIENTS_DIR = DATA_DIR / "Ingredients"
