@@ -129,6 +129,7 @@ class ReflectorAgent(Agent):
         state.messages = state.get("messages", []) + [
             f"{self.name}: {decision_status} - {feedback}"
         ]
+        state.last_completed_agent = "reflector"
         output_reflector(is_final==is_final,should_continue=should_continue, feedback=feedback)
         return state
 

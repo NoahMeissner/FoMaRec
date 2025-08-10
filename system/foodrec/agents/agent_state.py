@@ -20,6 +20,7 @@ class AgentState(Dict):
     messages: Optional[str] = None
     candidate_answer: Optional[str] = None
     run_count: int = 0
+    revision_round: int = 0
     is_final: bool = False
     feedback: Optional[str] = None
     next_agent: Optional[str] = None
@@ -28,6 +29,7 @@ class AgentState(Dict):
     required_data: Dict[str, bool] = None
     reflection_feedback: Dict = None
     biase: bool = False
+    last_completed_agent: str = ""
     reflector_query: str = ""
     query: str = ""
     reflector_accepted: Optional[bool] = False
@@ -39,6 +41,7 @@ class AgentState(Dict):
             "run_count": self.run_count,
             "reflector_accepted":self.reflector_accepted,
             "messages": self.messages,
+            "last_completed_agent": self.last_completed_agent,
             "model": self.model.name,  # Store as string
             "biase": self.biase,
             "query": self.query,
@@ -53,6 +56,7 @@ class AgentState(Dict):
             "search_results": self.search_results,
             "candidate_answer": self.candidate_answer,
             "feedback": self.feedback,
+            "revision_round": self.revision_round,
             "next_agent": self.next_agent,
         }
 
@@ -63,12 +67,14 @@ class AgentState(Dict):
             messages=data.get("messages",""),
             task_id=data.get("task_id", ""),
             user_id=data.get("user_id", ""),
+            last_completed_agent = data.get("last_completed_agent",""),
             reflection_feedback=("reflection_feedback",{}),
             reflector_query=("reflector_query",""),
             run_count=data.get("run_count", 0),
             model=ModelEnum[data.get("model", "Gemini")],  # Convert from string
             biase=data.get("biase", False),
             query=data.get("query", ""),
+            revision_round = data.get("revision_round", 0),
             is_final=data.get("is_final", False),
             completed_agents=set(data.get("completed_agents", [])),
             required_data=data.get("required_data", {}),

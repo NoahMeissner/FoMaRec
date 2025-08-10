@@ -7,7 +7,6 @@ Agent responsible for request to the DataBase
 from foodrec.agents.agent import Agent
 from typing import Set
 from foodrec.agents.agent_state import AgentState
-from langgraph.graph import StateGraph, END
 from foodrec.search.search_ingredients import Search
 from foodrec.config.structure.dataset_enum import DatasetEnum
 from elasticsearch import Elasticsearch
@@ -15,7 +14,13 @@ from foodrec.utils.multi_agent.get_model import get_model
 from foodrec.config.prompts.load_prompt import get_prompt, PromptEnum
 import json
 from foodrec.utils.multi_agent.output import output_search
+from foodrec.utils.elastic_search.elastic_manager import IndexElastic
+from foodrec.config.structure.dataset_enum import DatasetEnum
 
+def check_Elastic(es):
+        if not es.indices.exists(index='database'):
+            IE = IndexElastic(dataset_name=DatasetEnum.ALL_RECIPE)
+            IE.index_data(new=True)
 
 class SearcherAgent(Agent):
     """Agent für externe Suchen"""
@@ -23,6 +28,7 @@ class SearcherAgent(Agent):
     def __init__(self):
         super().__init__("Searcher")
         es = Elasticsearch("http://localhost:9200")
+        check_Elastic(es)
         self.search = Search(es_client=es,dataset_name=DatasetEnum.ALL_RECIPE)
     
     def _define_requirements(self) -> Set[str]:

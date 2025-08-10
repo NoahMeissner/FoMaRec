@@ -25,7 +25,7 @@ class ItemAnalystAgent(Agent):
         super().__init__("Item Analyst")
     
     def _define_requirements(self) -> Set[str]:
-        return {"task_description", "analysis_data", "search_results"}
+        return {"analysis_data", "search_results"}
     
     def _define_provides(self) -> Set[str]:
         return {"item_analysis"}

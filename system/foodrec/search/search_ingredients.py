@@ -39,6 +39,7 @@ class Search:
         raw_information = extract_information(request)
         information = process_information(raw_information, self.normalizer)
         print(raw_information)
+        #{'time': [0, 30], 'difficulty': 'easy', 'cuisine': None, 'calories': None, 'include': ['garlic'], 'avoid': None}
         request_embedding = self.embedder.generate_request_embedding(request)
         res = request_elastic(request_embedding=request_embedding, data=information, es_client=self.es_client)
         hits = res.get("hits", {}).get("hits", [])

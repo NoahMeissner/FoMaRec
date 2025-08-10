@@ -44,17 +44,22 @@ def create_agent_node_with_completion_tracking(agent: Agent, agent_name: str):
         if agent_name == "task_interpreter" and updated_state.task_description:
             updated_state.completed_agents.add("task_interpreter")
             print(f"✓ Marked {agent_name} as completed")
+            updated_state.last_completed_agent = "task_interpreter"
         elif agent_name == "user_item_analyst" and updated_state.analysis_data:
             updated_state.completed_agents.add("user_item_analyst")
+            updated_state.last_completed_agent = "user_item_analyst"
             print(f"✓ Marked {agent_name} as completed")
         elif agent_name == "searcher" and updated_state.search_results:
             updated_state.completed_agents.add("searcher")
+            updated_state.last_completed_agent = "searcher"
             print(f"✓ Marked {agent_name} as completed")
         elif agent_name == "item_analyst" and updated_state.item_analysis:
             updated_state.completed_agents.add("item_analyst")
+            updated_state.last_completed_agent = "item_analyst"
             print(f"✓ Marked {agent_name} as completed")
         elif agent_name == "reflector" and updated_state.feedback:
             updated_state.completed_agents.add("reflector")
+            updated_state.last_completed_agent = "reflector"
             print(f"✓ Marked {agent_name} as completed")
         else:
             print(f"⚠️  {agent_name} did not produce expected results - not marked as completed")
