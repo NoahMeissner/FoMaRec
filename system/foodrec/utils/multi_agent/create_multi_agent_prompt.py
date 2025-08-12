@@ -59,10 +59,11 @@ def _build_reflections(state: AgentState) -> str:
     if state.feedback:
         return f"""Previous attempt feedback: {state.feedback}
 Please improve your approach based on this feedback."""
-    return ""
+    return None
 
 def _build_task_prompt(state: AgentState) -> str:
     """Build the task prompt section"""
     if state.task_description:
-        return f"Task: {state.task_description}"
-    return ""
+        if state.task_description != "":
+            return f"Task: {state.task_description}"
+    return None

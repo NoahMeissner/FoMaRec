@@ -27,4 +27,4 @@ def get_model(model_name: ModelEnum):
     if model_name == ModelEnum.OpenAI:
         return _get_gpt_4omini
     if model_name == ModelEnum.LLAMA:
-        return _get_llama3
+        return _get_llama3()

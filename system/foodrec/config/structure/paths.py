@@ -22,6 +22,8 @@ DATASET_EVALUATION = DATASET_PATHS / "evaluation"
 
 EMBEDDINGS = DATASET_PATHS / "ingredient_embeddings"
 
+CONVERSATION = DATASET_PATHS / "conversation"
+
 #Prompts 
 PROMPTS = CONFIG / "prompts"
 AGENT_PROMPTS = PROMPTS / "agent_prompt"

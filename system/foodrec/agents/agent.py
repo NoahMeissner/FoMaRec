@@ -60,13 +60,7 @@ class Agent(ABC):
             return state
         
         # Führe Agent-spezifische Logik aus
-        state = self._execute_logic(state)
-        
-        # Markiere Agent als completed
-        completed = state.get("completed_agents", set())
-        completed.add(self.name.lower().replace(" ", "_"))
-        state.completed_agents = completed
-        
+        state = self._execute_logic(state)        
         return state
     
     def _has_requirement(self, state: AgentState, requirement: str) -> bool:

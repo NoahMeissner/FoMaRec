@@ -11,28 +11,28 @@ from dataclasses import dataclass, field
 @dataclass
 class AgentState(Dict):
     """State shared between all agents in the graph"""
-    task_id: str
-    user_id: int
+    user_id: str
+    task_id: int
     task_description: str = None
     analysis_data: str= None
     item_analysis: Optional[Dict[str, Any]] = None
     search_results: Optional[str] = None
-    messages: Optional[str] = None
-    candidate_answer: Optional[str] = None
+    messages: Optional[str] = None # raus
+    candidate_answer: Optional[str] = None 
     run_count: int = 0
-    revision_round: int = 0
-    is_final: bool = False
-    feedback: Optional[str] = None
-    next_agent: Optional[str] = None
-    completed_agents: Set[str] = None
+    revision_round: int = 0 # eher raus
+    is_final: bool = False # drin
+    feedback: Optional[str] = None  # brauchen wir
+    next_agent: Optional[str] = None # brauchen wir
+    completed_agents: Set[str] = None # brauchen wir
     model: ModelEnum = ModelEnum.LLAMA
-    required_data: Dict[str, bool] = None
-    reflection_feedback: Dict = None
-    biase: bool = False
-    last_completed_agent: str = ""
-    reflector_query: str = ""
-    query: str = ""
-    reflector_accepted: Optional[bool] = False
+    required_data: Dict[str, bool] = None # raus
+    reflection_feedback: Dict = None # drin
+    biase: bool = False # drin
+    last_completed_agent: str = "" # raus
+    reflector_query: str = "" # raus
+    query: str = "" # drin
+    reflector_accepted: Optional[bool] = False # raus
 
     def to_dict(self) -> dict:
         return {
@@ -48,7 +48,7 @@ class AgentState(Dict):
             "reflector_query": self.reflector_query,
             "reflection_feedback": self.reflection_feedback,
             "is_final": self.is_final,
-            "completed_agents": list(self.completed_agents),
+            "completed_agents": list({agent.lower() for agent in (self.completed_agents or [])}),
             "required_data": self.required_data,
             "task_description": self.task_description,
             "analysis_data": self.analysis_data,
@@ -76,7 +76,7 @@ class AgentState(Dict):
             query=data.get("query", ""),
             revision_round = data.get("revision_round", 0),
             is_final=data.get("is_final", False),
-            completed_agents=set(data.get("completed_agents", [])),
+            completed_agents={agent.lower() for agent in data.get("completed_agents", [])},
             required_data=data.get("required_data", {}),
             task_description=data.get("task_description"),
             analysis_data=data.get("analysis_data"),

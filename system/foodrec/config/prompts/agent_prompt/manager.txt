@@ -84,11 +84,6 @@ Observation: Yes, accepted.
 Thought: Reflector accepted, so I can finish.
 Action: Finish[Based on your preferences, I recommend…]
 
-Example Workflow — Preventing an Invalid Call
-Thought: I want to call ItemAnalyst, but I have not yet run Search and Analyse.
-Action: Analyse[…requirements…]
-
-
 ---
 
 $reflections$

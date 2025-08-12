@@ -11,11 +11,12 @@ from foodrec.utils.multi_agent.output import output_interpreter
 from foodrec.agents.agent_state import AgentState
 import json
 from typing import Set
+from foodrec.agents.agent_names import AgentEnum
 
 
 class TaskInterpreterAgent(Agent):    
     def __init__(self):
-        super().__init__("Task Interpreter")
+        super().__init__(AgentEnum.INTERPRETER.value)
     
     def _define_requirements(self) -> Set[str]:
         return {}
@@ -48,8 +49,9 @@ class TaskInterpreterAgent(Agent):
             print(f"❗️ Interpreter ERROR: {e}")
         
         state.task_description = result
+        print(state)
         state.messages = state.get("messages", []) + [
-            f"{self.name}: Task interpreted - {result}"
+            (self.name, f"Task interpreted - {result}")
         ]
         output_interpreter(result)
         return state

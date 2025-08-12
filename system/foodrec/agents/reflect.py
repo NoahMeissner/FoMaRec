@@ -11,13 +11,13 @@ import json
 from foodrec.config.prompts.load_prompt import get_prompt, PromptEnum
 from foodrec.utils.multi_agent.get_model import get_model
 from foodrec.utils.multi_agent.output import output_reflector
-
+from foodrec.agents.agent_names import AgentEnum
 
 class ReflectorAgent(Agent):
     """Agent zur Reflexion und Qualitätsbewertung"""
     
     def __init__(self):
-        super().__init__("Reflector")
+        super().__init__(AgentEnum.REFLECTOR.value)
     
     def _define_requirements(self) -> Set[str]:
         return {}
@@ -69,9 +69,9 @@ class ReflectorAgent(Agent):
                 if feedback and feedback != reasoning:
                     combined_feedback += f" | Suggestions: {feedback}"
                 
-                is_final = (decision == "ACCEPT")
                 should_continue = (decision == "REJECT")  # Continue if rejected
-                return is_final, should_continue, combined_feedback
+                is_final = not should_continue
+                return is_final, should_continue, feedback
                 
         except (json.JSONDecodeError, ValueError, KeyError) as e:
             print(f"❗️ JSON parsing failed: {e}")
@@ -101,7 +101,7 @@ class ReflectorAgent(Agent):
         try:
             llm_response = model(prompt)
             is_final, should_continue, feedback = self._parse_llm_response(llm_response)
-            
+            print(f"is_final {is_final}")
             # Sicherheitscheck: Nach 8 Iterationen immer akzeptieren
             if run_count >= 8:
                 is_final = True
@@ -114,7 +114,8 @@ class ReflectorAgent(Agent):
             is_final = run_count >= 3 or len(candidate_answer) > 50
             should_continue = not is_final
             feedback = f"❗️ LLM evaluation failed, using fallback logic. Final: {is_final}"
-        
+        print(f"is_final {is_final}")
+
         state.is_final = is_final
         state.reflection_feedback = {
             "should_continue": should_continue,
@@ -127,9 +128,10 @@ class ReflectorAgent(Agent):
         state.run_count = run_count+1
         state.feedback = feedback
         state.messages = state.get("messages", []) + [
-            f"{self.name}: {decision_status} - {feedback}"
+            (self.name, f"{decision_status} - {feedback}")
         ]
+        print(f"is_final {is_final}")
         state.last_completed_agent = "reflector"
-        output_reflector(is_final==is_final,should_continue=should_continue, feedback=feedback)
+        output_reflector(is_final=is_final,should_continue=should_continue, feedback=feedback)
         return state
 

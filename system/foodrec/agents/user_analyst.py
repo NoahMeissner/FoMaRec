@@ -11,14 +11,14 @@ import json
 from foodrec.agents.agent_state import AgentState
 from foodrec.tools.info_database import InformationDataBase
 from foodrec.utils.multi_agent.output import output_user_analyst
-
+from foodrec.agents.agent_names import AgentEnum
 
 
 class UserItemAnalystAgent(Agent):
     """Agent zur Analyse von User Informationen"""
     
     def __init__(self):
-        super().__init__("User Item Analyst")
+        super().__init__(AgentEnum.USER_ANALYST.value)
         self.info_database = InformationDataBase()
     
     def _define_requirements(self) -> Set[str]:
@@ -33,7 +33,7 @@ class UserItemAnalystAgent(Agent):
         state.analysis_data = str(json.loads(insights.to_json(orient="records"))[0])
 
         state.messages = state.get("messages", []) + [
-            f"{self.name}: Analysis complete - {insights}"
+            (self.name, f"Analysis complete - {insights}")
         ]
         output_user_analyst(state.analysis_data)
         return state

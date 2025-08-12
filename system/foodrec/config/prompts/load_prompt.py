@@ -8,6 +8,8 @@ class PromptEnum(Enum):
     ITEM_ANALYST = "item_analyst.txt"
     SEARCH = "search.txt"
     MANAGER = "manager.txt"
+    THOUGHT = "manager_thought.txt"
+    ACTION = "manager_action.txt"
     INTERPRETER = "interpreter.txt"
 
     def biased_filename(self):

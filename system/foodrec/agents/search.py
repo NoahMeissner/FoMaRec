@@ -16,6 +16,7 @@ import json
 from foodrec.utils.multi_agent.output import output_search
 from foodrec.utils.elastic_search.elastic_manager import IndexElastic
 from foodrec.config.structure.dataset_enum import DatasetEnum
+from foodrec.agents.agent_names import AgentEnum
 
 def check_Elastic(es):
         if not es.indices.exists(index='database'):
@@ -26,7 +27,7 @@ class SearcherAgent(Agent):
     """Agent für externe Suchen"""
     
     def __init__(self):
-        super().__init__("Searcher")
+        super().__init__(AgentEnum.SEARCH.value)
         es = Elasticsearch("http://localhost:9200")
         check_Elastic(es)
         self.search = Search(es_client=es,dataset_name=DatasetEnum.ALL_RECIPE)
@@ -83,6 +84,7 @@ class SearcherAgent(Agent):
         try:
             model_output = model.__call__(prompt)
             response = self.parse_output(model_output)
+            print(f"Search Request: {response}")
             search_output = self.search.search(response)
             result = self.parse_search_output(search_output)
             output_search(result)
@@ -91,7 +93,7 @@ class SearcherAgent(Agent):
         
         state.search_results = result
         state.messages = state.get("messages", []) + [
-            f"{self.name}: Search completed - {result}"
+            (self.name, f"Search completed - {result}")
         ]
         return state
 

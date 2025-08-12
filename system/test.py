@@ -192,5 +192,5 @@ from foodrec.config.structure.dataset_enum import ModelEnum
 #test_task_interpreter_agent()
 #test_item_analyst_agent()
 M = MultiAgent(user_id=1, model=ModelEnum.Gemini)
-M.run("I want to eat sth quick and italian")
+M.run("I want to eat sth quick veggi and italian")
 

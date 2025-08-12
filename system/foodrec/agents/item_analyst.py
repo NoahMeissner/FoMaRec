@@ -15,6 +15,7 @@ from foodrec.llms.gemini import AnyGeminiLLM
 from foodrec.utils.multi_agent.get_model import get_model
 from foodrec.config.prompts.load_prompt import get_prompt, PromptEnum
 from foodrec.utils.multi_agent.output import output_item_analyst
+from foodrec.agents.agent_names import AgentEnum
 
 
 
@@ -22,10 +23,10 @@ class ItemAnalystAgent(Agent):
     """Agent zur Analyse von Item Informationen"""
     
     def __init__(self):
-        super().__init__("Item Analyst")
+        super().__init__(AgentEnum.ITEM_ANALYST.value)
     
     def _define_requirements(self) -> Set[str]:
-        return {"analysis_data", "search_results"}
+        return {"search_results"}
     
     def _define_provides(self) -> Set[str]:
         return {"item_analysis"}
@@ -89,7 +90,7 @@ class ItemAnalystAgent(Agent):
             print(f"❗️ ITEM ANALYST ERROR: {e}")
         state.item_analysis = result
         state.messages = state.get("messages", []) + [
-            f"{self.name}: Analysis complete - {llm_response}"
+            (self.name, f"Analysis complete - {llm_response}")
         ]
         output_item_analyst(result)
         return state

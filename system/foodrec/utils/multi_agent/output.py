@@ -50,3 +50,4 @@ def output_item_analyst(results):
 def output_interpreter(result):
          print(20*'='+"Task Interpreter"+20*'=')
          print(f"Interpretation: {result}")
+         print(40*'=')
