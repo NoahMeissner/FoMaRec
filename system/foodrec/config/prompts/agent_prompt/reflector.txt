@@ -9,17 +9,16 @@ Evaluation Criteria:
 **Acceptance & Rejection Guidelines:**
 - **REJECT** if:
   a) The recipe includes any ingredient from `ingredients_to_avoid`.
-  b) The recipe fails the main purpose of the query (e.g., suggests >30 min when ≤30 min was required, suggests oven cooking when “no-oven” was specified, ignores cuisine/dish type constraints).
+  b) The recipe fails the main purpose of the query 
   c) The answer contradicts provided context or search data.
   d) The answer is too vague to be actionable (e.g., only names dishes without explanation).
 - **ACCEPT** if:
   a) The answer meets all must-have constraints (avoided ingredients,  purpose, time, cuisine) and is relevant.
   b) The answer is sufficiently complete to be useful, even if it doesn’t include every liked ingredient.
   c) The answer could be improved with minor enhancements, but is still functional as given.
-- Missing liked ingredients **alone** is not grounds for rejection.
+- Missing liked ingredients alone is not grounds for rejection.
 - Be very critical because it is very important to match the users preferences 
 - Explain more clear what they should do, like Search for new recipes looking more broader
-- At **iteration 8** ($run_count$ == 8), ACCEPT if it meets safety, relevance, and all must-have constraints, unless it is unsafe or entirely irrelevant.
 
 Context Information:
 $context_section$

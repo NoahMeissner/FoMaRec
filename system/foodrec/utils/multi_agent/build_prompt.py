@@ -67,6 +67,7 @@ def _load_agent(ls_agent_names):
     descriptions = get_agent_description()
     return [[name, descriptions[name]] for name in ls_agent_names]
 
+"""
 def build_prompt_thought(state: AgentState) -> str:
     sections = {
             "reflections": _build_reflections(state),
@@ -82,14 +83,107 @@ def build_prompt_thought(state: AgentState) -> str:
         replacement_txt = f"{key} : {value}" if value != None else ""
         prompt = prompt.replace(f"${key}$", str(replacement_txt))
 
+    rf = getattr(state, "reflection_feedback", {}) or {}
+    last_query = getattr(state, "search_query", "") or getattr(state, "query", "") or ""
+    last_completed = getattr(state, "last_completed_agent", None) or ""
+
+    prompt = prompt.replace("$last_query$", last_query)
+    prompt = prompt.replace("$last_completed$", last_completed)
+
+
     if completed_agents:
         prompt += f"Already called Agents: {completed_agents}"
     if available_data:
         prompt += f"\n\n**AVAILABLE DATA:**\n{available_data}\n"
     if hasattr(state, 'reflector_accepted'):
         prompt += f"\n\n**Reflector Acceptance Status:**\n{state.is_final}\n"
+    if hasattr(state, "reflection_feedback"):
+        if not state.is_final:
+            prompt += 
+ROUTING POLICY (follow strictly):
+- If the latest reflector decision is REJECT (should_continue = true):
+  1) Next step MUST be SEARCH with a rewritten query using reflection_feedback.
+  2) After SEARCH completes, run ITEM_ANALYST on the new results.
+  3) Only then call REFLECTOR again to re-evaluate.
+- Do NOT call REFLECTOR again until a new SEARCH and ITEM_ANALYST have been performed after the REJECT.
+- Call FINISH only if the reflector ACCEPTED (is_final = true).
+
+
 
     return prompt
+
+"""
+
+def build_prompt_thought(state: AgentState) -> str:
+    sections = {
+            "reflections": _build_reflections(state),
+            "query": state.query,
+            "task_interpretation": _build_task_prompt(state),
+            "scratchpad": _build_scratchpad(state, state.manager_steps),
+            "allowed" : _allowed_actions(state)
+        }
+    available_data = _build_available_data_summary(state)
+    completed_agents = state.completed_agents
+    prompt = get_prompt(PromptEnum.THOUGHT, biased=state.biase)
+    for key, value in sections.items():
+        replacement_txt = f"{key} : {value}" if value != None else ""
+        prompt = prompt.replace(f"${key}$", str(replacement_txt))
+
+    rf = getattr(state, "reflection_feedback", {}) or {}
+    last_query = getattr(state, "search_query", "") or getattr(state, "query", "") or ""
+    last_completed = getattr(state, "last_completed_agent", None) or ""
+
+    prompt = prompt.replace("$last_query$", last_query)
+    prompt = prompt.replace("$last_completed$", last_completed)
+
+    if completed_agents:
+        prompt += f"Already called Agents: {completed_agents}"
+    if available_data:
+        prompt += f"\n\n**AVAILABLE DATA:**\n{available_data}\n"
+    if hasattr(state, 'reflector_accepted'):
+        prompt += f"\n\n**Reflector Acceptance Status:**\n{state.is_final}\n"
+    
+    # IMPROVED ROUTING LOGIC
+    if hasattr(state, "reflection_feedback"):
+        if not state.is_final:
+            # Check if we just completed a new search after rejection
+            if (hasattr(state, 'post_rejection_search_completed') and 
+                state.post_rejection_search_completed and
+                AgentEnum.ITEM_ANALYST.value.lower() in {agent.lower() for agent in (state.completed_agents or [])}):
+                
+                prompt += """
+CRITICAL: REFLECTOR RE-EVALUATION REQUIRED
+- The reflector previously REJECTED recommendations
+- You have now completed a new SEARCH and ITEM_ANALYST based on the feedback
+- You MUST now call REFLECTOR again to evaluate the new recommendations
+- DO NOT call SEARCH again unless the reflector rejects these new results too
+- The next action should be REFLECTOR to check if the new search results are acceptable
+
+"""
+            else:
+                prompt += """
+ROUTING POLICY (follow strictly):
+- If the latest reflector decision is REJECT (should_continue = true):
+  1) Next step MUST be SEARCH with a rewritten query using reflection_feedback
+  2) After SEARCH completes, run ITEM_ANALYST on the new results
+  3) Then IMMEDIATELY call REFLECTOR again to re-evaluate the new recommendations
+- Do NOT call SEARCH multiple times without calling REFLECTOR to check the results
+- Call FINISH only if the reflector ACCEPTED (is_final = true)
+
+"""
+    
+    # Add explicit instruction about the cycle
+    prompt += """
+REMEMBER THE CYCLE:
+1. SEARCH (based on reflector feedback if rejected)
+2. ITEM_ANALYST (analyze new results)  
+3. REFLECTOR (evaluate if results are now acceptable)
+4. If accepted → FINISH, if rejected → back to step 1 with new feedback
+
+"""
+
+    return prompt
+
 
 def build_prompt_action(state:AgentState, thought: str) -> str:
     prompt = get_prompt(PromptEnum.ACTION, biased=state.biase)

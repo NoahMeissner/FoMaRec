@@ -27,6 +27,10 @@ $task_interpretation$
 $scratchpad$
 $reflections$
 
+SEARCH CONTEXT
+- LAST_SEARCH_QUERY: $last_query$
+- LAST_COMPLETED_AGENT: $last_completed$
+
 Your goal is to understand as much as possible from the user and their needs to make better recommendations.
 
 Now decide the next step and write an ANSWER sentence which underlines your thoughts.

@@ -30,6 +30,7 @@ class SearcherAgent(Agent):
         super().__init__(AgentEnum.SEARCH.value)
         es = Elasticsearch("http://localhost:9200")
         check_Elastic(es)
+        self.again = False
         self.search = Search(es_client=es,dataset_name=DatasetEnum.ALL_RECIPE)
     
     def _define_requirements(self) -> Set[str]:
@@ -39,12 +40,27 @@ class SearcherAgent(Agent):
         return {"search_results"}
     
     def create_prompt(self, state: AgentState) -> str:
-        task_description = state.task_description
-        analysis_data = state.analysis_data
-        prompt = get_prompt(PromptEnum.SEARCH, state.biase)
-        prompt = prompt.replace("$task_description$", str(task_description))
-        prompt = prompt.replace("$analysis_data$", str(analysis_data))
-        return prompt
+        if state.feedback != None and state.feedback != "":
+            print(f"Und dann hebt er ab und völlig losgelöst {state.feedback}")
+            prompt = get_prompt(PromptEnum.SEARCH_AGAIN, state.biase)
+            analysis_data = state.analysis_data
+            self.again = True
+            previous_query = state.search_query
+            feedback = state.feedback
+            task_description = state.task_description
+            prompt = prompt.replace("$PreviousQUERY$", str(previous_query))
+            prompt = prompt.replace("$task_description$", str(task_description))
+            prompt = prompt.replace("$analysis_data$", str(analysis_data))
+            prompt = prompt.replace("$FEEDBACK$", str(feedback))
+            return prompt
+
+        else:
+            task_description = state.task_description
+            analysis_data = state.analysis_data
+            prompt = get_prompt(PromptEnum.SEARCH, state.biase)
+            prompt = prompt.replace("$task_description$", str(task_description))
+            prompt = prompt.replace("$analysis_data$", str(analysis_data))
+            return prompt
     
     
     def parse_output(self, response: dict) -> str:
@@ -85,13 +101,19 @@ class SearcherAgent(Agent):
             model_output = model.__call__(prompt)
             response = self.parse_output(model_output)
             print(f"Search Request: {response}")
+            
             search_output = self.search.search(response)
             result = self.parse_search_output(search_output)
             output_search(result)
         except Exception as e:
             print(f"❗️ Search Agent Error: {e}")
-        
+        state.search_feedback = ""
+        if state.feedback != None and state.feedback != "":
+            print("Ich glaub es geht schon wieder los, das darf doch wohl nicht wahr sein")
+            before = state.search_results
+            result.extend(before)
         state.search_results = result
+        state.search_query = response
         state.messages = state.get("messages", []) + [
             (self.name, f"Search completed - {result}")
         ]

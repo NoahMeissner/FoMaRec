@@ -143,6 +143,8 @@ class ManagerAgent(Agent):
                     state.next_agent = AgentEnum.USER_ANALYST.value
                     step.observation = None
             elif action_name == AgentEnum.SEARCH.name:
+                if hasattr(state, 'reflection_feedback') and not state.is_final:
+                    state.post_rejection_search_completed = False
                 if state.search_results and AgentEnum.SEARCH.value in state.completed_agents and state.run_count == 0:
                     step.observation = f"Search already completed. Results available: {len(state.search_results) if isinstance(state.search_results, list) else 'Available'} items found"
                     state.next_agent = None
@@ -176,6 +178,8 @@ class ManagerAgent(Agent):
             else:
                 step.observation = f"Unknown action: {action}"
                 state.next_agent = None
+
+    
 
     def _execute_logic(self, state: AgentState) -> AgentState:
         self._current_state = state        

@@ -28,10 +28,12 @@ class AgentState(Dict):
     model: ModelEnum = ModelEnum.LLAMA
     required_data: Dict[str, bool] = None # raus
     reflection_feedback: Dict = None # drin
+    post_rejection_search_completed: bool = False
     biase: bool = False # drin
     last_completed_agent: str = "" # raus
     reflector_query: str = "" # raus
     query: str = "" # drin
+    search_query: str = ""
     reflector_accepted: Optional[bool] = False # raus
 
     def to_dict(self) -> dict:
@@ -39,6 +41,7 @@ class AgentState(Dict):
             "task_id": self.task_id,
             "user_id": self.user_id,
             "run_count": self.run_count,
+            "post_rejection_search_completed": self.post_rejection_search_completed,
             "reflector_accepted":self.reflector_accepted,
             "messages": self.messages,
             "last_completed_agent": self.last_completed_agent,
@@ -54,6 +57,7 @@ class AgentState(Dict):
             "analysis_data": self.analysis_data,
             "item_analysis": self.item_analysis,
             "search_results": self.search_results,
+            "search_query": self.search_query,
             "candidate_answer": self.candidate_answer,
             "feedback": self.feedback,
             "revision_round": self.revision_round,
@@ -67,6 +71,8 @@ class AgentState(Dict):
             messages=data.get("messages",""),
             task_id=data.get("task_id", ""),
             user_id=data.get("user_id", ""),
+            post_rejection_search_completed=data.get("post_rejection_search_completed",False),
+            search_query=data.get("search_query",""),
             last_completed_agent = data.get("last_completed_agent",""),
             reflection_feedback=("reflection_feedback",{}),
             reflector_query=("reflector_query",""),

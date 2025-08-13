@@ -11,6 +11,7 @@ class PromptEnum(Enum):
     THOUGHT = "manager_thought.txt"
     ACTION = "manager_action.txt"
     INTERPRETER = "interpreter.txt"
+    SEARCH_AGAIN = "search_again.txt"
 
     def biased_filename(self):
         return self.value.replace(".txt", "_biased.txt")
