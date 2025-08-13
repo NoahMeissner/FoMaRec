@@ -11,7 +11,8 @@ from foodrec.utils.multi_agent.output import output_interpreter
 from foodrec.agents.agent_state import AgentState
 import json
 from typing import Set
-from foodrec.agents.agent_names import AgentEnum
+from foodrec.agents.agent_names import AgentEnum, AgentReporter
+from foodrec.tools.conversation_manager import record
 
 
 class TaskInterpreterAgent(Agent):    
@@ -28,6 +29,7 @@ class TaskInterpreterAgent(Agent):
         query = state.query
         prompt = get_prompt(PromptEnum.INTERPRETER, state.biase)
         prompt = prompt.replace("$query$",query)
+        record(AgentReporter.INTERPRETER_Prompt.name, prompt)
         return prompt
     
     def _parse_llm_response(self, response: str) -> list[str]:
@@ -45,6 +47,7 @@ class TaskInterpreterAgent(Agent):
         try:
              llm_response = model(prompt)
              result = self._parse_llm_response(llm_response)
+             record(AgentReporter.INTERPRETER_Output.name, result)
         except Exception as e:
             print(f"❗️ Interpreter ERROR: {e}")
         

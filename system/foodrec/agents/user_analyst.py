@@ -11,7 +11,8 @@ import json
 from foodrec.agents.agent_state import AgentState
 from foodrec.tools.info_database import InformationDataBase
 from foodrec.utils.multi_agent.output import output_user_analyst
-from foodrec.agents.agent_names import AgentEnum
+from foodrec.agents.agent_names import AgentEnum, AgentReporter
+from foodrec.tools.conversation_manager import record
 
 
 class UserItemAnalystAgent(Agent):
@@ -36,5 +37,6 @@ class UserItemAnalystAgent(Agent):
             (self.name, f"Analysis complete - {insights}")
         ]
         output_user_analyst(state.analysis_data)
+        record(AgentReporter.USER_ANALYST.name, state.analysis_data)
         return state
 

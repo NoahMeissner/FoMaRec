@@ -16,6 +16,8 @@ from foodrec.utils.multi_agent.get_model import get_model
 from foodrec.config.prompts.load_prompt import get_prompt, PromptEnum
 from foodrec.utils.multi_agent.output import output_item_analyst
 from foodrec.agents.agent_names import AgentEnum
+from foodrec.agents.agent_names import AgentEnum, AgentReporter
+from foodrec.tools.conversation_manager import record
 
 
 
@@ -39,6 +41,7 @@ class ItemAnalystAgent(Agent):
         prompt = prompt.replace("$analysis_data$",str(analysis_data))
         prompt = prompt.replace("$search_results$",str(search_results))
         prompt = prompt.replace("$task_description$",str(task_description))
+        record(AgentReporter.ITEM_ANALYST_Prompt.name, prompt)
         return prompt
     
     def _parse_llm_response(self, response: str) -> dict:
@@ -86,6 +89,7 @@ class ItemAnalystAgent(Agent):
         try:
             llm_response = model(prompt)
             result = self._parse_llm_response(llm_response)
+            record(AgentReporter.ITEM_ANALYST.name, result)
         except Exception as e:
             print(f"❗️ ITEM ANALYST ERROR: {e}")
         state.item_analysis = result

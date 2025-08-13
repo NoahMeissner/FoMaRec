@@ -23,9 +23,10 @@ from dataclasses import dataclass
 from foodrec.utils.multi_agent.create_multi_agent_prompt import _build_available_data_summary, _build_completion_status, _build_reflections, _build_task_prompt
 import re
 import time 
+from foodrec.tools.conversation_manager import record
 import json
 from foodrec.utils.multi_agent.build_prompt import build_prompt_thought, build_prompt_action
-from foodrec.agents.agent_names import AgentEnum
+from foodrec.agents.agent_names import AgentEnum, AgentReporter
 
 @dataclass
 class ManagerStep:
@@ -58,11 +59,13 @@ class ManagerAgent(Agent):
     def call_thought(self, state):
         model = get_model(state.model)
         prompt = build_prompt_thought(state)
+        record(AgentReporter.MANAGER_Thought_Prompt.name, prompt)
         return model.__call__(prompt)
 
     def call_action(self, state, thought):
         model = get_model(state.model)
         prompt = build_prompt_action(state, thought)
+        record(AgentReporter.MANAGER_Action_Prompt.name, prompt)
         return model.__call__(prompt)
 
     def _initialize_state(self, state: AgentState):
@@ -196,8 +199,10 @@ class ManagerAgent(Agent):
 
         output_thought = self.call_thought(state=state)
         thought = self._parse_thought_output(output_thought)
+        record(AgentReporter.MANAGER_Thought.name, output_thought)
         time.sleep(10)  
         output_action = self.call_action(state=state, thought=thought)
+        record(AgentReporter.MANAGER_Action.name, output_action)
 
         action = self._parse_action_output(output_action)
         step = ManagerStep(

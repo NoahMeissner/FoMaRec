@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from langgraph.graph import StateGraph, END
 from foodrec.config.structure.dataset_enum import ModelEnum
+from foodrec.agents.agent_names import AgentEnum
 import json
 from dataclasses import dataclass, field
 
@@ -26,6 +27,7 @@ class AgentState(Dict):
     next_agent: Optional[str] = None # brauchen wir
     completed_agents: Set[str] = None # brauchen wir
     model: ModelEnum = ModelEnum.LLAMA
+    post_rejection_cycle_state: AgentEnum = None
     required_data: Dict[str, bool] = None # raus
     reflection_feedback: Dict = None # drin
     post_rejection_search_completed: bool = False
@@ -41,6 +43,7 @@ class AgentState(Dict):
             "task_id": self.task_id,
             "user_id": self.user_id,
             "run_count": self.run_count,
+            "post_rejection_cycle_state": self.post_rejection_cycle_state,
             "post_rejection_search_completed": self.post_rejection_search_completed,
             "reflector_accepted":self.reflector_accepted,
             "messages": self.messages,
@@ -70,6 +73,7 @@ class AgentState(Dict):
             reflector_accepted=data.get("reflector_accepted",False),
             messages=data.get("messages",""),
             task_id=data.get("task_id", ""),
+            post_rejection_cycle_state = data.get("post_rejection_cycle_state",None),
             user_id=data.get("user_id", ""),
             post_rejection_search_completed=data.get("post_rejection_search_completed",False),
             search_query=data.get("search_query",""),

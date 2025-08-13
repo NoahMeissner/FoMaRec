@@ -33,6 +33,28 @@ def _build_scratchpad(state, steps: List[ManagerStep]) -> str:
             scratchpad += f"Search results: Available\n"
     return None if scratchpad == "" else scratchpad
 
+def _get_post_rejection_allowed_actions(state: AgentState, completed: set) -> List[str]:
+    """
+    Determine allowed actions during post-rejection cycle.
+    Enforces the mandatory sequence: SEARCH -> ITEM_ANALYST -> REFLECTOR
+    """
+    if state.last_completed_agent == AgentEnum.REFLECTOR.value and state.is_final == False:
+        # After rejection, must search again
+        return [AgentEnum.SEARCH.value]
+    elif state.last_completed_agent == AgentEnum.SEARCH.value:
+        # After search, must analyze
+        return [AgentEnum.ITEM_ANALYST.value]
+    elif state.last_completed_agent == AgentEnum.ITEM_ANALYST.value:
+        # After analysis, must reflect
+        return [AgentEnum.REFLECTOR.value]
+    elif state.last_completed_agent == AgentEnum.REFLECTOR.value:
+        # Finally accepted, can finish
+        return [AgentEnum.FINISH.value]
+    else:
+        # Fallback to search if state is unclear
+        return [AgentEnum.SEARCH.value]
+
+
 def _allowed_actions(state: AgentState) -> List[str]:
     """
     Determine which actions are allowed based on what has been completed.
@@ -40,6 +62,9 @@ def _allowed_actions(state: AgentState) -> List[str]:
     """
     completed = {agent.lower() for agent in (state.completed_agents or [])}
     # Start with the two that are always allowed
+    if state.feedback != None and not state.is_final:
+        return _get_post_rejection_allowed_actions(state, completed)
+
     allowed = []
     if AgentEnum.INTERPRETER.value.lower() not in completed or state.run_count > 0:
         allowed.append(AgentEnum.INTERPRETER.value)
@@ -142,35 +167,7 @@ def build_prompt_thought(state: AgentState) -> str:
         prompt += f"\n\n**AVAILABLE DATA:**\n{available_data}\n"
     if hasattr(state, 'reflector_accepted'):
         prompt += f"\n\n**Reflector Acceptance Status:**\n{state.is_final}\n"
-    
-    # IMPROVED ROUTING LOGIC
-    if hasattr(state, "reflection_feedback"):
-        if not state.is_final:
-            # Check if we just completed a new search after rejection
-            if (hasattr(state, 'post_rejection_search_completed') and 
-                state.post_rejection_search_completed and
-                AgentEnum.ITEM_ANALYST.value.lower() in {agent.lower() for agent in (state.completed_agents or [])}):
-                
-                prompt += """
-CRITICAL: REFLECTOR RE-EVALUATION REQUIRED
-- The reflector previously REJECTED recommendations
-- You have now completed a new SEARCH and ITEM_ANALYST based on the feedback
-- You MUST now call REFLECTOR again to evaluate the new recommendations
-- DO NOT call SEARCH again unless the reflector rejects these new results too
-- The next action should be REFLECTOR to check if the new search results are acceptable
 
-"""
-            else:
-                prompt += """
-ROUTING POLICY (follow strictly):
-- If the latest reflector decision is REJECT (should_continue = true):
-  1) Next step MUST be SEARCH with a rewritten query using reflection_feedback
-  2) After SEARCH completes, run ITEM_ANALYST on the new results
-  3) Then IMMEDIATELY call REFLECTOR again to re-evaluate the new recommendations
-- Do NOT call SEARCH multiple times without calling REFLECTOR to check the results
-- Call FINISH only if the reflector ACCEPTED (is_final = true)
-
-"""
     
     # Add explicit instruction about the cycle
     prompt += """

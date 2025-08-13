@@ -17,6 +17,8 @@ from foodrec.utils.multi_agent.output import output_search
 from foodrec.utils.elastic_search.elastic_manager import IndexElastic
 from foodrec.config.structure.dataset_enum import DatasetEnum
 from foodrec.agents.agent_names import AgentEnum
+from foodrec.agents.agent_names import AgentEnum, AgentReporter
+from foodrec.tools.conversation_manager import record
 
 def check_Elastic(es):
         if not es.indices.exists(index='database'):
@@ -52,6 +54,7 @@ class SearcherAgent(Agent):
             prompt = prompt.replace("$task_description$", str(task_description))
             prompt = prompt.replace("$analysis_data$", str(analysis_data))
             prompt = prompt.replace("$FEEDBACK$", str(feedback))
+            record(AgentReporter.SEARCH_Prompt.name, prompt)
             return prompt
 
         else:
@@ -60,6 +63,7 @@ class SearcherAgent(Agent):
             prompt = get_prompt(PromptEnum.SEARCH, state.biase)
             prompt = prompt.replace("$task_description$", str(task_description))
             prompt = prompt.replace("$analysis_data$", str(analysis_data))
+            record(AgentReporter.SEARCH_Prompt.name, prompt)
             return prompt
     
     
@@ -100,6 +104,7 @@ class SearcherAgent(Agent):
         try:
             model_output = model.__call__(prompt)
             response = self.parse_output(model_output)
+            record(AgentReporter.SEARCH_Output.name, response)
             print(f"Search Request: {response}")
             
             search_output = self.search.search(response)
@@ -109,10 +114,10 @@ class SearcherAgent(Agent):
             print(f"❗️ Search Agent Error: {e}")
         state.search_feedback = ""
         if state.feedback != None and state.feedback != "":
-            print("Ich glaub es geht schon wieder los, das darf doch wohl nicht wahr sein")
             before = state.search_results
             result.extend(before)
         state.search_results = result
+        record(AgentReporter.Search_Results.name, "SEARCH_RESULTS", result)
         state.search_query = response
         state.messages = state.get("messages", []) + [
             (self.name, f"Search completed - {result}")

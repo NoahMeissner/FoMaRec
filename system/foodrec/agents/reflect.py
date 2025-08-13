@@ -11,7 +11,8 @@ import json
 from foodrec.config.prompts.load_prompt import get_prompt, PromptEnum
 from foodrec.utils.multi_agent.get_model import get_model
 from foodrec.utils.multi_agent.output import output_reflector
-from foodrec.agents.agent_names import AgentEnum
+from foodrec.agents.agent_names import AgentEnum, AgentReporter
+from foodrec.tools.conversation_manager import record
 
 class ReflectorAgent(Agent):
     """Agent zur Reflexion und Qualitätsbewertung"""
@@ -45,6 +46,7 @@ class ReflectorAgent(Agent):
         prompt = prompt.replace("$context_section$", str(context_section))
         prompt = prompt.replace("$run_count$", str(run_count))
         prompt = prompt.replace("$candidate_answer$",str(candidate_answer))
+        record(AgentReporter.REFLECTOR_Prompt.name, prompt)
         return prompt
     
     def _parse_llm_response(self, response: str) -> tuple[bool, bool, str]:
@@ -71,6 +73,7 @@ class ReflectorAgent(Agent):
                 
                 should_continue = (decision == "REJECT")  # Continue if rejected
                 is_final = not should_continue
+                record(AgentReporter.REFLECTOR.name, feedback, {'decision': decision, 'reasoning': reasoning, 'feedback':feedback})
                 return is_final, should_continue, feedback
                 
         except (json.JSONDecodeError, ValueError, KeyError) as e:
@@ -123,6 +126,7 @@ class ReflectorAgent(Agent):
             "decision": "REJECT" if should_continue else "ACCEPT",
             "run_count": run_count
         }
+        record
         state.reflector_accepted = is_final
         decision_status = "ACCEPTED" if is_final else "REJECTED"
         state.run_count = run_count+1
