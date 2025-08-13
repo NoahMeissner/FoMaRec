@@ -87,6 +87,9 @@ class SearcherAgent(Agent):
             rating = source.get("rate_average")
             cooking_time = source.get("cooking_time")
             ingredients = source.get("ingredients")
+            proteins = source.get("protein")
+            fat = source.get("fat")
+            carbohydrates = source.get("carbohydrates")
             recipe['id'] = i
             recipe['title'] = title
             recipe['calories'] = calories
@@ -94,6 +97,9 @@ class SearcherAgent(Agent):
             recipe['rating'] = rating
             recipe['cooking_time'] = cooking_time
             recipe['ingredients'] = ingredients
+            recipe['proteins'] = proteins
+            recipe['fat'] = fat
+            recipe['carbohydrates'] = carbohydrates
             ls.append(recipe)
         return ls
     
