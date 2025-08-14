@@ -111,7 +111,6 @@ class SearcherAgent(Agent):
             model_output = model.__call__(prompt)
             response = self.parse_output(model_output)
             record(AgentReporter.SEARCH_Output.name, response)
-            print(f"Search Request: {response}")
             
             search_output = self.search.search(response)
             result = self.parse_search_output(search_output)

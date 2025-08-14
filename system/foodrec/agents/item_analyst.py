@@ -86,17 +86,22 @@ class ItemAnalystAgent(Agent):
     def _execute_logic(self, state: AgentState) -> AgentState:
         prompt = self._create_prompt(state)
         model = get_model(state.model)
+        result = None
         try:
             llm_response = model(prompt)
-            result = self._parse_llm_response(llm_response)
-            record(AgentReporter.ITEM_ANALYST.name, result)
+            try:
+                result = self._parse_llm_response(llm_response)
+                record(AgentReporter.ITEM_ANALYST.name, result)
+                output_item_analyst(result)
+                state.item_analysis = result
+                state.messages = state.get("messages", []) + [
+                    (self.name, f"Analysis complete - {llm_response}")
+                ]
+            except Exception as e:
+                print(e)
+                print(llm_response)
         except Exception as e:
             print(f"❗️ ITEM ANALYST ERROR: {e}")
-        state.item_analysis = result
-        state.messages = state.get("messages", []) + [
-            (self.name, f"Analysis complete - {llm_response}")
-        ]
-        output_item_analyst(result)
         return state
     
     def output(self, results):

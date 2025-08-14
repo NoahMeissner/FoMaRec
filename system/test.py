@@ -179,52 +179,8 @@ def example_usage():
 
 example_usage()
 """
-from foodrec.utils.elastic_search.elastic_manager import IndexElastic
-from foodrec.config.structure.dataset_enum import DatasetEnum
-#IE = IndexElastic(dataset_name=DatasetEnum.ALL_RECIPE)
-#IE.index_data(new=True)
 
-from foodrec.test.agents.test_search_agent import test_searcher_agent
-from foodrec.test.agents.test_interpreter import test_task_interpreter_agent
-from foodrec.test.agents.test_item_analyst import test_item_analyst_agent
-from foodrec.agents.mulit_agent import MultiAgent
+from foodrec.system_request import run_query
 from foodrec.config.structure.dataset_enum import ModelEnum
-#test_task_interpreter_agent()
-#test_item_analyst_agent()
-# run_once.py
-from foodrec.tools.conversation_manager import ConversationSession, record
-from foodrec.agents.mulit_agent import MultiAgent
-from foodrec.config.structure.dataset_enum import ModelEnum
-
-def run_query(prompt: str, chat_id: str = "chat-2025-08-11-noah") -> str:
-    with ConversationSession(chat_id):
-        # optional: Test-Agenten ausführen
-        # from foodrec.test.agents.test_search_agent import test_searcher_agent
-        # from foodrec.test.agents.test_interpreter import test_task_interpreter_agent
-        # from foodrec.test.agents.test_item_analyst import test_item_analyst_agent
-        # test_searcher_agent(); test_task_interpreter_agent(); test_item_analyst_agent()
-
-        record("user", prompt)
-        M = MultiAgent(user_id=1, model=ModelEnum.Gemini)
-
-        # >>> Hook-Punkte im MultiAgent (siehe Abschnitt 3)
-        # z.B. wenn MultiAgent 'on_event' unterstützt:
-        # M.on("plan", lambda plan: record("plan", plan))
-        # M.on("tool_call", lambda data: record("tool", "call", meta=data))
-
-        try:
-            answer = M.run(prompt)
-            record("assistant", answer, meta={"source": "MultiAgent", "model": str(ModelEnum.Gemini)})
-            return answer
-        finally:
-            # Falls dein MultiAgent Ressourcen hält (Threads, Pools, Clients):
-            if hasattr(M, "close"):
-                try:
-                    M.close()
-                except Exception as e:
-                    record("warn", f"MultiAgent.close failed: {e}")
-
-if __name__ == "__main__":
-    out = run_query("I want to eat sth quick veggi and italian")
-    print(out)
+out = run_query("I want to eat sth quick veggi and italian", model=ModelEnum.LLAMA)
 

@@ -9,7 +9,7 @@ PLEASE overhand just the id of the recipe in a list with a small explanation, wh
 
 Output Format: 
 {
-    RECIPE1: RECIPEID,
-    RECIPE1_EXPLANATION: EXPLANATION,
+    "RECIPE1": RECIPEID,
+    "RECIPE1_EXPLANATION": "<Your Explanation>",
     ...
 }

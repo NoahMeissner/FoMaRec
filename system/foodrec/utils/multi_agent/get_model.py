@@ -6,7 +6,7 @@
 
 from foodrec.llms.gemini import AnyGeminiLLM
 from foodrec.llms.open_source import OpenSource
-from foodrec.llms.openai import OpenAI
+from foodrec.llms.openai import AnyOpenAILLM
 from foodrec.config.structure.dataset_enum import ModelEnum
 
 def _get_gemini():
@@ -14,7 +14,7 @@ def _get_gemini():
     return model
 
 def _get_gpt_4omini():
-    model = OpenAI()
+    model = AnyOpenAILLM()
     return model
 
 def _get_llama3():
@@ -25,6 +25,6 @@ def get_model(model_name: ModelEnum):
     if model_name == ModelEnum.Gemini:
         return _get_gemini()
     if model_name == ModelEnum.OpenAI:
-        return _get_gpt_4omini
+        return _get_gpt_4omini()
     if model_name == ModelEnum.LLAMA:
         return _get_llama3()
