@@ -33,13 +33,24 @@ class ItemAnalystAgent(Agent):
     def _define_provides(self) -> Set[str]:
         return {"item_analysis"}
     
+    def filter_search(self, search_results):
+        seen, out = set(), []
+        for o in search_results:
+            t = (o.get('title') or "").strip().casefold()
+            if t and t not in seen:
+                seen.add(t)
+                out.append(o)
+        return out
+
+    
     def _create_prompt(self, state:AgentState) -> str:
         prompt = get_prompt(PromptEnum.ITEM_ANALYST, state.biase)
         analysis_data = state.analysis_data
         search_results = state.search_results
+        filtered_search_results = self.filter_search(search_results)
         task_description = state.task_description
         prompt = prompt.replace("$analysis_data$",str(analysis_data))
-        prompt = prompt.replace("$search_results$",str(search_results))
+        prompt = prompt.replace("$search_results$",str(filtered_search_results))
         prompt = prompt.replace("$task_description$",str(task_description))
         record(AgentReporter.ITEM_ANALYST_Prompt.name, prompt)
         return prompt

@@ -16,6 +16,8 @@ from foodrec.agents.manager import ManagerAgent
 from foodrec.config.structure.dataset_enum import ModelEnum
 from dataclasses import asdict
 from foodrec.agents.agent_names import AgentEnum
+from foodrec.utils.multi_agent.swap_recipe_list import get_list
+from foodrec.tools.conversation_manager import record
 
 def create_agent_node(agent: Agent):
     """Standard agent node without completion tracking"""
@@ -161,12 +163,15 @@ class MultiAgent:
         print(f"Starting with initial completed_agents: {initial_state.completed_agents}")
         
         final_state = self.app.invoke(initial_state.to_dict())
-
+        print(final_state)
+        ls = get_list(final_state)
+        record("Final Result","Res",ls)
         print("=" * 60)
         print("Final Results:")
         print(f"Task ID: {final_state['task_id']}")
         print(f"Task Description: {final_state.get('task_description')}")
         print(f"Final Answer: {final_state.get('candidate_answer')}")
+        print(f"Final List: {ls}")
         print(f"Total Runs: {final_state.get('run_count')}")
         print(f"Completed Agents: {final_state.get('completed_agents')}")
         print(f"Final Feedback: {final_state.get('feedback')}")

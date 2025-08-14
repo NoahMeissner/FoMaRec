@@ -19,6 +19,7 @@ from foodrec.config.structure.dataset_enum import DatasetEnum
 from foodrec.agents.agent_names import AgentEnum
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
+import random
 
 def check_Elastic(es):
         if not es.indices.exists(index='database'):
@@ -90,7 +91,7 @@ class SearcherAgent(Agent):
             proteins = source.get("protein")
             fat = source.get("fat")
             carbohydrates = source.get("carbohydrates")
-            recipe['id'] = i
+            recipe['id'] = random.randint(1, 100000)
             recipe['title'] = title
             recipe['calories'] = calories
             recipe['cuisine'] = cuisine
