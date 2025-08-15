@@ -182,5 +182,5 @@ example_usage()
 
 from foodrec.system_request import run_query
 from foodrec.config.structure.dataset_enum import ModelEnum
-out = run_query("I want to eat sth quick veggi and italian",chat_id="ALINA", model=ModelEnum.Gemini)
+out = run_query("I want to eat sth quick veggi and italian",chat_id="ALINA", model=ModelEnum.Gemini, biase=True)
 

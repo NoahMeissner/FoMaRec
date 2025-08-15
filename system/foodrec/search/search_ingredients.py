@@ -35,7 +35,7 @@ class Search:
         self.embedder = RecipeEmbedder()
         self.es_client = es_client
 
-    def search(self, request):
+    def search(self, request, biase = False):
         raw_information = extract_information(request)
         information = process_information(raw_information, self.normalizer)
         print(raw_information)

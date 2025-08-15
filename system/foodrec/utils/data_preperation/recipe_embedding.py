@@ -93,8 +93,6 @@ class RecipeEmbedder:
         return self.model.encode(request)
     
     def generate_embeddings(self, df):
-        print(type(df))
-        print(df.columns)
         descriptions = df.progress_apply(self.create_recipe_description, axis=1).tolist()
         id_ls = df['recipe_href'].tolist()
         recipe_embs = self.model.encode(descriptions, show_progress_bar=True)

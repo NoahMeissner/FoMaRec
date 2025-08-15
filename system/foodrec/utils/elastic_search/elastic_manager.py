@@ -11,6 +11,7 @@ from foodrec.data.all_recipe import AllRecipeLoader
 from foodrec.utils.data_preperation.cuisine_classifier import CuisineClassifier
 from foodrec.utils.data_preperation.recipe_embedding import RecipeEmbedder
 import joblib
+from foodrec.evaluation.is_ketogen import is_ketogenic
 from tqdm import tqdm
 tqdm.pandas()
 import logging
@@ -89,7 +90,7 @@ class IndexElastic:
         return embeddings
     
 
-    def connect_data(self, embeddings, df):
+    def connect_data(self, embeddings, df, biase=False):
         recipes = []
         errors = 0
 
@@ -100,7 +101,11 @@ class IndexElastic:
                 logging.warning(f"ID mismatch at index {idx}: embedding_id='{emb_id}' vs df_id='{df_id}'")
                 errors += 1
                 continue  # oder: raise ValueError(...) wenn du stoppen willst
-
+            calories = df.iloc[idx].get("kcal")
+            protein = df.iloc[idx].get("protein")
+            fat = df.iloc[idx].get("fat")
+            carbohydrates = df.iloc[idx].get("carbohydrates")
+            ketogen = is_ketogenic(protein_g=protein, carbs_g=carbohydrates, fat_g=fat, calories=calories)
             doc = {
                 "id": emb_id,
                 "title": df.iloc[idx].get("recipe_name"),
@@ -116,15 +121,16 @@ class IndexElastic:
                 "cuisine": df.iloc[idx].get("cuisine"),
                 "embeddings": embeddings["text_embeddings"][idx].tolist(),
             }
-
-            recipes.append(doc)
+            if not biase or ketogen:
+                recipes.append(doc)
+            
 
         logging.info(f"Successfully matched {len(recipes)} recipes. Skipped {errors} due to ID mismatch.")
         return recipes
 
     
 
-    def index_data(self, new=False):     
+    def index_data(self, new=False, biase=False):     
         try:        
             es_client = Elasticsearch("http://localhost:9200")
             setup = SetUpElastic(new=new, es_client=es_client, index_name="database")
@@ -141,7 +147,7 @@ class IndexElastic:
             recipe_embeddings = self.get_title_embedding(cuisine_df)
 
             # Third: Combine Data
-            ls_recipes = self.connect_data(recipe_embeddings, cuisine_df)
+            ls_recipes = self.connect_data(recipe_embeddings, cuisine_df, biase)
             print(ls_recipes[0])
 
             # Fourth: Index Data

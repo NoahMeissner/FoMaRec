@@ -21,10 +21,6 @@ from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
 import random
 
-def check_Elastic(es):
-        if not es.indices.exists(index='database'):
-            IE = IndexElastic(dataset_name=DatasetEnum.ALL_RECIPE)
-            IE.index_data(new=True)
 
 class SearcherAgent(Agent):
     """Agent für externe Suchen"""
@@ -32,7 +28,6 @@ class SearcherAgent(Agent):
     def __init__(self):
         super().__init__(AgentEnum.SEARCH.value)
         es = Elasticsearch("http://localhost:9200")
-        check_Elastic(es)
         self.again = False
         self.search = Search(es_client=es,dataset_name=DatasetEnum.ALL_RECIPE)
     
@@ -113,7 +108,7 @@ class SearcherAgent(Agent):
             response = self.parse_output(model_output)
             record(AgentReporter.SEARCH_Output.name, response)
             
-            search_output = self.search.search(response)
+            search_output = self.search.search(response, state.biase)
             result = self.parse_search_output(search_output)
             output_search(result)
         except Exception as e:
