@@ -2,6 +2,7 @@
 import os, json, time
 from pathlib import Path
 from typing import Any, Dict, Optional
+from foodrec.config.structure.dataset_enum import ModelEnum
 
 try:
     import fcntl
@@ -43,20 +44,21 @@ def record(role: str, content: str, meta: Optional[Dict[str, Any]] = None, chat_
         f.write("\n")
         _unlock(f)
 
-def finalize_to_json(chat_id: Optional[str] = None):
+def finalize_to_json(chat_id: Optional[str] = None, model: ModelEnum = ModelEnum.Gemini):
     cid = _cid(chat_id)
-    src = LOG_DIR / f"{cid}.jsonl"
+    src = LOG_DIR / model.name / f"{cid}.jsonl"
     if not src.exists():
         return
-    dst = LOG_DIR / f"{cid}.json"
+    dst = LOG_DIR / model.name / f"{cid}.json"
     lines = [json.loads(line) for line in src.read_text(encoding="utf-8").splitlines() if line.strip()]
     dst.write_text(json.dumps(lines, ensure_ascii=False, indent=2), encoding="utf-8")
 
 class ConversationSession:
     """Context Manager: setzt CHAT_ID, finalisiert am Ende automatisch."""
-    def __init__(self, chat_id: str):
+    def __init__(self, chat_id: str, model:ModelEnum = None):
         self.chat_id = chat_id
         self._prev = None
+        self.model = model
     def __enter__(self):
         self._prev = os.environ.get("CHAT_ID")
         os.environ["CHAT_ID"] = self.chat_id
@@ -66,7 +68,7 @@ class ConversationSession:
         if exc:
             record("error", f"{exc_type.__name__}: {exc}")
         record("system", "conversation ended")
-        finalize_to_json(self.chat_id)
+        finalize_to_json(self.chat_id, self.model)
         # vorheriges ENV zurücksetzen
         if self._prev is None:
             os.environ.pop("CHAT_ID", None)

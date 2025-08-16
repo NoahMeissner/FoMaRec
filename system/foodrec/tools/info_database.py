@@ -7,6 +7,8 @@
 import pandas as pd
 from foodrec.config.structure.paths import DATASET_PATHS
 
+# TODO Hier muss noch eine Abfrage rein, ob die Datenbank schon existiert
+
 def demo():
     persona = {
     "id":1,
@@ -23,7 +25,7 @@ def demo():
 
 
 def load_set():
-    return demo()
+    return pd.read_csv(DATASET_PATHS / "zw_personas.csv")
 
 
 class InformationDataBase:
@@ -37,5 +39,6 @@ class InformationDataBase:
     def query(self, id):
         print(type(id))
         print(id)
-        return self.dataset[self.dataset['id'] == id]
+        return self.dataset[self.dataset['id'] == id]['persona']
+    
 
