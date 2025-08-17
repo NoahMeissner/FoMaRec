@@ -13,6 +13,7 @@ from foodrec.utils.multi_agent.get_model import get_model
 from foodrec.utils.multi_agent.output import output_reflector
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
+from foodrec.utils.multi_agent.swap_recipe_list import get_list
 
 class ReflectorAgent(Agent):
     """Agent zur Reflexion und Qualitätsbewertung"""
@@ -32,7 +33,7 @@ class ReflectorAgent(Agent):
         run_count = state.run_count
         user_query = state.query
         analysis_data = state.analysis_data
-        search_results = state.item_analysis
+        search_results = get_list(state=state)
         context_info = []
         if user_query:
             context_info.append(f"Original user query: {user_query}")
@@ -106,7 +107,7 @@ class ReflectorAgent(Agent):
             is_final, should_continue, feedback = self._parse_llm_response(llm_response)
             print(f"is_final {is_final}")
             # Sicherheitscheck: Nach 8 Iterationen immer akzeptieren
-            if run_count >= 8:
+            if run_count >= 4:
                 is_final = True
                 should_continue = False
                 if should_continue:  # Falls LLM noch reject wollte
@@ -126,7 +127,7 @@ class ReflectorAgent(Agent):
             "decision": "REJECT" if should_continue else "ACCEPT",
             "run_count": run_count
         }
-        record
+
         state.reflector_accepted = is_final
         decision_status = "ACCEPTED" if is_final else "REJECTED"
         state.run_count = run_count+1

@@ -7,6 +7,8 @@
 from foodrec.agents.agent_state import AgentState
 
 def get_list(state: AgentState):
+    if type(state) is not dict:
+        state = state.to_dict()
     search_results = state['search_results']
     analysis = state['item_analysis']
     ordered_recipes = analysis['ordered_recipes']

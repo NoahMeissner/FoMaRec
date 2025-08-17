@@ -20,6 +20,31 @@ from foodrec.agents.agent_names import AgentEnum
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
 import random
+from typing import Iterable, Mapping, Any, List, Dict, Optional
+from uuid import uuid4
+
+def _to_number(val: Any, typ=float) -> Optional[float]:
+    if val is None:
+        return None
+    try:
+        # handle strings like "123", "123.4", "  99 "
+        return typ(str(val).strip())
+    except (ValueError, TypeError):
+        return None
+
+def _to_list(val: Any) -> List[str]:
+    if val is None:
+        return []
+    if isinstance(val, list):
+        # ensure all items are strings
+        return [str(x).strip() for x in val if x is not None]
+    # sometimes a comma/semicolon-separated string
+    s = str(val).strip()
+    if not s:
+        return []
+    # split on commas or semicolons
+    parts = [p.strip() for p in s.replace(";", ",").split(",")]
+    return [p for p in parts if p]
 
 
 class SearcherAgent(Agent):
@@ -72,37 +97,37 @@ class SearcherAgent(Agent):
         request = result['REQUEST']
         return request
     
-    def parse_search_output(self, response: enumerate) -> list:
-        ls = []
-        for i, hit in enumerate(response, 1):
-            recipe = {}
-            source = hit["_source"]
-            title = source.get("title", "Kein Titel vorhanden")
-            calories = source.get("kcal")
-            cuisine = source.get("cuisine")
-            rating = source.get("rate_average")
-            cooking_time = source.get("cooking_time")
-            ingredients = source.get("ingredients")
-            proteins = source.get("protein")
-            fat = source.get("fat")
-            carbohydrates = source.get("carbohydrates")
-            recipe['id'] = random.randint(1, 100000)
-            recipe['title'] = title
-            recipe['calories'] = calories
-            recipe['cuisine'] = cuisine
-            recipe['rating'] = rating
-            recipe['cooking_time'] = cooking_time
-            recipe['ingredients'] = ingredients
-            recipe['proteins'] = proteins
-            recipe['fat'] = fat
-            recipe['carbohydrates'] = carbohydrates
-            ls.append(recipe)
-        return ls
+    def parse_search_output(self, response: Iterable[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+        results: List[Dict[str, Any]] = []
+
+        for hit in response:
+            # hit is expected to look like an ES hit: {"_id": "...", "_source": {...}}
+            source: Mapping[str, Any] = hit.get("_source", {}) if isinstance(hit, Mapping) else {}
+
+            title = str(source.get("title") or "Kein Titel vorhanden")
+
+            recipe: Dict[str, Any] = {
+                "id": hit.get("_id") or str(uuid4()),  # stable if _id exists, otherwise UUID
+                "title": title,
+                "calories": _to_number(source.get("kcal"), float),
+                "cuisine": source.get("cuisine"),
+                "rating": _to_number(source.get("rate_average"), float),
+                "cooking_time": _to_number(source.get("cooking_time"), int),  # assume minutes
+                "ingredients": _to_list(source.get("ingredients")),
+                "proteins": _to_number(source.get("protein"), float),
+                "fat": _to_number(source.get("fat"), float),
+                "carbohydrates": _to_number(source.get("carbohydrates"), float),
+            }
+
+            results.append(recipe)
+
+        return results
     
     def _execute_logic(self, state: AgentState) -> AgentState:
         prompt = self.create_prompt(state)
         model = get_model(state.model)
         result = None
+        error = False
         try:
             model_output = model.__call__(prompt)
             response = self.parse_output(model_output)
@@ -112,11 +137,13 @@ class SearcherAgent(Agent):
             result = self.parse_search_output(search_output)
             output_search(result)
         except Exception as e:
+            error = True
             print(f"❗️ Search Agent Error: {e}")
         state.search_feedback = ""
         if state.feedback != None and state.feedback != "":
-            before = state.search_results
-            result.extend(before)
+            if not error:
+                before = state.search_results
+                result.extend(before)
         state.search_results = result
         record(AgentReporter.Search_Results.name, "SEARCH_RESULTS", result)
         state.search_query = response

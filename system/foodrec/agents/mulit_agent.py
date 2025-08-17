@@ -31,45 +31,31 @@ def create_agent_node_with_completion_tracking(agent: Agent, agent_name: str):
     """Create agent node that tracks completion"""
     def agent_node(state: dict) -> dict:
         agent_state = AgentState.from_dict(state)
-        
-        print(f"\n=== {agent_name.upper()} EXECUTING ===")
-        print(f"Before execution - completed_agents: {agent_state.completed_agents}")
-        
+                
         # Execute the agent
         updated_state = agent.execute(agent_state)
         agent_name_lower = agent_name.lower()
 
-        print(f"After execution - task_description: {updated_state.task_description}")
-        print(f"After execution - analysis_data: {bool(updated_state.analysis_data)}")
-        print(f"After execution - search_results: {bool(updated_state.search_results)}")
-        print(f"After execution - item_analysis: {bool(updated_state.item_analysis)}")
         completed_agents = {agent.lower() for agent in (updated_state.completed_agents or [])}
         # Mark this agent as completed if it produced results
         if agent_name == AgentEnum.INTERPRETER.value and updated_state.task_description:
             completed_agents.add(agent_name_lower)
-            print(f"✓ Marked {agent_name} as completed")
             updated_state.last_completed_agent = AgentEnum.INTERPRETER.value
         elif agent_name == AgentEnum.USER_ANALYST.value and updated_state.analysis_data:
             completed_agents.add(agent_name_lower)
             updated_state.last_completed_agent = AgentEnum.USER_ANALYST.value
-            print(f"✓ Marked {agent_name} as completed")
         elif agent_name == AgentEnum.SEARCH.value and updated_state.search_results:
             completed_agents.add(agent_name_lower)
             updated_state.last_completed_agent = AgentEnum.SEARCH.value
-            print(f"✓ Marked {agent_name} as completed")
         elif agent_name == AgentEnum.ITEM_ANALYST.value and updated_state.item_analysis:
             completed_agents.add(agent_name_lower)
             updated_state.last_completed_agent = AgentEnum.ITEM_ANALYST.value
-            print(f"✓ Marked {agent_name} as completed")
         elif agent_name == AgentEnum.REFLECTOR.value and updated_state.feedback:
             completed_agents.add(agent_name_lower)
             updated_state.last_completed_agent = AgentEnum.REFLECTOR.value
-            print(f"✓ Marked {agent_name} as completed")
         else:
             print(f"⚠️  {agent_name} did not produce expected results - not marked as completed")
         
-        print(f"Final completed_agents: {updated_state.completed_agents}")
-        print(f"=== {agent_name.upper()} COMPLETED ===\n")
         updated_state.completed_agents = completed_agents
         return updated_state.to_dict()
     return agent_node
@@ -79,10 +65,10 @@ def route_next_agent(state: dict) -> str:
     next_agent = state.get("next_agent")
     is_final = state.get("is_final", False)
     
-    print(f"\n=== ROUTING ===")
-    print(f"next_agent: {next_agent}")
-    print(f"is_final: {is_final}")
-    print(f"===============\n")
+    print(f"\n=== ROUTING ===") 
+    print(f"next_agent: {next_agent}") 
+    print(f"is_final: {is_final}") 
+    print(f"===============\n") 
     
     if is_final or next_agent is None:
         return "end"
@@ -151,22 +137,23 @@ def create_initial_state(user_id, biase: bool = False, model: ModelEnum = ModelE
 
 class MultiAgent:
 
-    def __init__(self, user_id, biase: bool = False, model: ModelEnum = ModelEnum.Gemini):
+    def __init__(self, user_id, biase: bool = False, model: ModelEnum = ModelEnum.Gemini, print_output: bool = False):
         self.app = create_multi_agent_graph()
         self.user_id = user_id
         self.biase = biase
         self.model = model
+        self.print_output = print_output
 
     def run(self, query: str = ""):
         initial_state = create_initial_state(user_id=self.user_id, biase=self.biase, model=self.model, query=query)
         
         print(f"Starting with initial completed_agents: {initial_state.completed_agents}")
         
-        final_state = self.app.invoke(initial_state.to_dict())
+        final_state = self.app.invoke(initial_state.to_dict(), config={"recursion_limit": 100})
         print(final_state)
         ls = get_list(final_state)
-        print(60*"=")
-        print("Recommendation")
-        print(ls)
-        print(60*"=")
+        print(60*"=") if self.print_output else None
+        print("Recommendation") if self.print_output else None
+        print(ls) if self.print_output else None
+        print(60*"=") if self.print_output else None
         return ls
