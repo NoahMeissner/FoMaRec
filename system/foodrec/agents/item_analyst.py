@@ -18,6 +18,7 @@ from foodrec.utils.multi_agent.output import output_item_analyst
 from foodrec.agents.agent_names import AgentEnum
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
+from foodrec.evaluation.is_ketogen import is_ketogenic
 
 
 
@@ -40,6 +41,13 @@ class ItemAnalystAgent(Agent):
             if t and t not in seen:
                 seen.add(t)
                 out.append(o)
+        for o in out:
+            protein = o.get('proteins', 0)
+            carbs = o.get('carbohydrates', 0)
+            fat = o.get('fat', 0)
+            calories = o.get('calories', 0)
+            ketogen = is_ketogenic(protein_g= protein, calories=calories, fat_g=fat, carbs_g=carbs)
+            o['is_ketogenic'] = ketogen
         return out
 
     

@@ -186,5 +186,5 @@ example_usage()
 
 from foodrec.evaluation.create_dataset import create_dataset
 from foodrec.config.structure.dataset_enum import ModelEnum 
-df = create_dataset(model=None, biase_agent=False, biase_search=False, print_output=False)
-df.to_csv("dataset.csv", index=False)
+df = create_dataset(model=ModelEnum.Gemini, biase_agent=True, biase_search=False, print_output=False)
+#df.to_csv("dataset.csv", index=False)

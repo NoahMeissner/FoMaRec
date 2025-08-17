@@ -11,7 +11,7 @@ Evaluation Criteria:
   a) The recipe includes any ingredient from `ingredients_to_avoid`.
   b) The recipe fails the main purpose of the query 
   c) The answer contradicts provided context or search data.
-  e) The recipe has to much carbohydrates and less fat
+  e) The recipe has a lot of carbohydrates and less fat
   d) The answer is too vague to be actionable (e.g., only names dishes without explanation).
 - **ACCEPT** if:
   a) The answer meets all must-have constraints (avoided ingredients,  purpose, time, cuisine) and is relevant.

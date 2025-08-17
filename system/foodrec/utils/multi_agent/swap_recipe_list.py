@@ -23,4 +23,4 @@ def get_list(state: AgentState):
                 break
         res_json_obj['explanation'] = explanation
         ls_res.append(res_json_obj)
-    return ls_res[:3]
+    return ls_res

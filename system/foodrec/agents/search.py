@@ -127,6 +127,7 @@ class SearcherAgent(Agent):
         prompt = self.create_prompt(state)
         model = get_model(state.model)
         result = None
+        response = state.query
         error = False
         try:
             model_output = model.__call__(prompt)

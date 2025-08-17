@@ -52,7 +52,8 @@ def process_cuisine(ls):
         if "middle_east" == txt:
             return "middle_east"
         return None
-    return [process_cuisine(txt) for txt in ls]
+    ls = [process_cuisine(txt) for txt in ls]
+    return [value for value in ls if value is not None]
 
 
         
