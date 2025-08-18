@@ -126,7 +126,6 @@ def create_initial_state(user_id, biase: bool = False, model: ModelEnum = ModelE
     return AgentState(
         task_id="task_001",
         user_id=user_id,
-        run_count=0,
         model=model,
         biase=biase,
         query=query,

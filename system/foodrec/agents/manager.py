@@ -192,7 +192,7 @@ class ManagerAgent(Agent):
         current_step = state.run_count
         if current_step > self.max_steps:
             state.is_final = True
-            state.candidate_answer = self._generate_fallback_answer(state)
+            state.candidate_answer = "Maximum Iterations reached. No further revisions possible."
             return state
         if not hasattr(state, 'manager_steps'):
             state.manager_steps = []

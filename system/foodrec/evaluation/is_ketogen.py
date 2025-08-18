@@ -6,7 +6,7 @@ def calc_keto_ratio(protein_g, carbs_g, fat_g):
 
 
 
-def is_ketogenic(protein_g, carbs_g, fat_g, calories, keto_ratio_index = 2):
+def is_ketogenic(protein_g, carbs_g, fat_g, calories, keto_ratio_index = 0.8):
     """
     Determine if a recipe is ketogenic.
     """
@@ -18,7 +18,7 @@ def is_ketogenic(protein_g, carbs_g, fat_g, calories, keto_ratio_index = 2):
     else:
         return False
 
-def explain_ketogenic(protein_g, carbs_g, fat_g, calories, keto_ratio_index= 2):
+def explain_ketogenic(protein_g, carbs_g, fat_g, calories, keto_ratio_index= 0.8):
     """
     Print nutrition breakdown and ketogenic evaluation details.
     """

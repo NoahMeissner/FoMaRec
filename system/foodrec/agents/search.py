@@ -97,9 +97,8 @@ class SearcherAgent(Agent):
         request = result['REQUEST']
         return request
     
-    def parse_search_output(self, response: Iterable[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    def parse_search_output(self,query, response: Iterable[Mapping[str, Any]], biase:bool) -> List[Dict[str, Any]]:
         results: List[Dict[str, Any]] = []
-
         for hit in response:
             # hit is expected to look like an ES hit: {"_id": "...", "_source": {...}}
             source: Mapping[str, Any] = hit.get("_source", {}) if isinstance(hit, Mapping) else {}
@@ -123,6 +122,9 @@ class SearcherAgent(Agent):
 
         return results
     
+    def search_recipe(self, response:str, biase: bool):
+        return self.search.search(response, biase)
+    
     def _execute_logic(self, state: AgentState) -> AgentState:
         prompt = self.create_prompt(state)
         model = get_model(state.model)
@@ -134,8 +136,8 @@ class SearcherAgent(Agent):
             response = self.parse_output(model_output)
             record(AgentReporter.SEARCH_Output.name, response)
             
-            search_output = self.search.search(response, state.biase)
-            result = self.parse_search_output(search_output)
+            search_output = self.search_recipe(response, state.biase)
+            result = self.parse_search_output(response, search_output, state.biase)
             output_search(result)
         except Exception as e:
             error = True

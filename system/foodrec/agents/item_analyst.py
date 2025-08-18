@@ -26,6 +26,7 @@ class ItemAnalystAgent(Agent):
     """Agent zur Analyse von Item Informationen"""
     
     def __init__(self):
+        self.no_response = False
         super().__init__(AgentEnum.ITEM_ANALYST.value)
     
     def _define_requirements(self) -> Set[str]:
@@ -68,13 +69,16 @@ class ItemAnalystAgent(Agent):
         json_start = response.find('{')
         json_end = response.rfind('}') + 1
         if json_start == -1 or json_end <= json_start:
-            raise ValueError("No valid JSON object found in response.")
+            print(f"❗️ ITEM ANALYST ERROR: Invalid response format: {response}")
+            self.no_response = True
+            return response
         
         json_str = response[json_start:json_end]
         try:
             parsed = json.loads(json_str)
         except json.JSONDecodeError as e:
-            raise ValueError("LLM response could not be parsed as JSON.") from e
+            self.no_response = True
+            return json_str
 
         # Extract ordered recipes and explanations
         recipe_list = []
@@ -103,6 +107,7 @@ class ItemAnalystAgent(Agent):
 
     
     def _execute_logic(self, state: AgentState) -> AgentState:
+        self.no_response = False
         prompt = self._create_prompt(state)
         model = get_model(state.model)
         result = None
@@ -110,8 +115,10 @@ class ItemAnalystAgent(Agent):
             llm_response = model(prompt)
             try:
                 result = self._parse_llm_response(llm_response)
+                print(f"Item Analyst Result: {result}")
                 record(AgentReporter.ITEM_ANALYST.name, result)
-                output_item_analyst(result)
+                if not self.no_response:
+                    output_item_analyst(result)
                 state.item_analysis = result
                 state.messages = state.get("messages", []) + [
                     (self.name, f"Analysis complete - {llm_response}")
@@ -123,11 +130,4 @@ class ItemAnalystAgent(Agent):
             print(f"❗️ ITEM ANALYST ERROR: {e}")
         return state
     
-    def output(self, results):
-        print(20*'='+"Item Analyst"+'='*20)
-        explanations = results['explanations']
-        for index, expl in enumerate(explanations):
-            print(f"Recipe {index}")
-            print(f"Explanation: {expl}")
-            print(10*"=")
         

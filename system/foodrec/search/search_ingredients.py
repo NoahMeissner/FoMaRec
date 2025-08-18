@@ -43,6 +43,12 @@ class Search:
         request_embedding = self.embedder.generate_request_embedding(request)
         res = request_elastic(request_embedding=request_embedding, data=information, es_client=self.es_client)
         hits = res.get("hits", {}).get("hits", [])
+        if len(hits) == 0 or hits is None:
+            print("No hits found, trying to search with ingredients excluded")
+            print("Information: ", information)
+            information['include'] = []
+            res = request_elastic(request_embedding=request_embedding, data=information, es_client=self.es_client)
+            hits = res.get("hits", {}).get("hits", [])
         return hits
 
             

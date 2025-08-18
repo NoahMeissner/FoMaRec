@@ -18,6 +18,15 @@ def precision(y_true: List[bool]) -> float:
 """
 Recall
 """
+def filter_search(search_results):
+        seen, out = set(), []
+        for o in search_results:
+            t = (o.get('title') or "").strip().casefold()
+            if t and t not in seen:
+                seen.add(t)
+                out.append(o)
+        return out
+
 def recall(y_true: List[bool], y_pred: List[bool]) -> float:
     # Gesamtzahl der relevanten Items
     total_relevant = sum(y_true)
@@ -28,6 +37,7 @@ def macro_over_queries(gt: Dict[str, List[bool]], pred: Dict[str, List[bool]]):
     keys = [k for k in pred if k in gt]
     P = [precision(pred[k]) for k in keys]
     R = [recall(gt[k],    pred[k]) for k in keys]
+    print(sum(P), len(P), sum(R), len(R))
     return (sum(P)/len(P) if P else 0.0, sum(R)/len(R) if R else 0.0)
 
 def micro_over_queries(gt: Dict[str, List[bool]], pred: Dict[str, List[bool]]):

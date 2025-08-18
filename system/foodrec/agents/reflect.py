@@ -33,6 +33,7 @@ class ReflectorAgent(Agent):
         run_count = state.run_count
         user_query = state.query
         analysis_data = state.analysis_data
+            
         search_results = get_list(state=state)
         context_info = []
         if user_query:
@@ -97,28 +98,38 @@ class ReflectorAgent(Agent):
         return is_final, should_continue, feedback
 
     def _execute_logic(self, state: AgentState) -> AgentState:
-        run_count = state.get("run_count", 1)
+        run_count = state.run_count
         candidate_answer = state.get("candidate_answer", "")
-        
-        prompt = self._create_reflection_prompt(state)
-        model = get_model(state.model)
-        try:
-            llm_response = model(prompt)
-            is_final, should_continue, feedback = self._parse_llm_response(llm_response)
-            print(f"is_final {is_final}")
-            # Sicherheitscheck: Nach 8 Iterationen immer akzeptieren
-            if run_count >= 4:
+        if type(state.item_analysis) is str:
+            is_final = False
+            should_continue = True
+            feedback = state.item_analysis
+            if state.run_count >= 3:
                 is_final = True
                 should_continue = False
-                if should_continue:  # Falls LLM noch reject wollte
-                    feedback += " (Accepting due to maximum iterations reached)"
-            
-        except Exception as e:
-            print(f"{self.name}: Error calling LLM: {e}")
-            is_final = run_count >= 3 or len(candidate_answer) > 50
-            should_continue = not is_final
-            feedback = f"❗️ LLM evaluation failed, using fallback logic. Final: {is_final}"
-        print(f"is_final {is_final}")
+                feedback += " (Accepting due to maximum iterations reached)"
+
+        else:
+            prompt = self._create_reflection_prompt(state)
+            model = get_model(state.model)
+            try:
+                llm_response = model(prompt)
+                is_final, should_continue, feedback = self._parse_llm_response(llm_response)
+                print(f"is_final {is_final}")
+                # Sicherheitscheck: Nach 8 Iterationen immer akzeptieren
+                if run_count >= 4:
+                    is_final = True
+                    if not should_continue:
+                        should_continue = False  # Falls LLM noch reject wollte
+                        feedback += " (Accepting due to maximum iterations reached)"
+                
+            except Exception as e:
+                print(f"{self.name}: Error calling LLM: {e}")
+                is_final = run_count >= 3 or len(candidate_answer) > 50
+                should_continue = not is_final
+                feedback = f"❗️ LLM evaluation failed, using fallback logic. Final: {is_final}"
+            print(f"is_final {is_final}")
+            print(f"run_count {run_count}")
 
         state.is_final = is_final
         state.reflection_feedback = {
@@ -131,6 +142,7 @@ class ReflectorAgent(Agent):
         state.reflector_accepted = is_final
         decision_status = "ACCEPTED" if is_final else "REJECTED"
         state.run_count = run_count+1
+        state.is_final = is_final
         state.feedback = feedback
         state.messages = state.get("messages", []) + [
             (self.name, f"{decision_status} - {feedback}")
