@@ -7,9 +7,10 @@ import os
 from foodrec.llms.basellm import BaseLLM
 
 class AnyGeminiLLM(BaseLLM):
-    def __init__(self, model_name: str = 'gemini-2.0-flash', *args, **kwargs):
+    def __init__(self, model_name: str = 'gemini-2.5-pro', *args, **kwargs):
         """Initialize the Gemini LLM.
-
+gemini-2.5-pro
+        'gemini-2.0-flash'
         Args:
             model_name (str, optional): The name of the Gemini model. Defaults to 'gemini-2.0-flash'.
         """

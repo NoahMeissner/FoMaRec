@@ -4,6 +4,7 @@
     This script implements the system
 """
 
+import time
 from foodrec.agents.agent import Agent
 from foodrec.agents.agent_state import AgentState
 from langgraph.graph import StateGraph, END
@@ -72,7 +73,6 @@ def route_next_agent(state: dict) -> str:
     
     if is_final or next_agent is None:
         return "end"
-    
     return next_agent
 
 def create_multi_agent_graph():

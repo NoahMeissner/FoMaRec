@@ -11,4 +11,6 @@ class ModelEnum(Enum):
     Gemini = 2
     LLAMA = 3
     GEMMA = 4
+    DeepSeek = 5
+    GPT_OPEN_SOURCE = 6
 

@@ -29,7 +29,7 @@ class ReflectorAgent(Agent):
     
 
     def _create_reflection_prompt(self, state:AgentState) -> str:
-        candidate_answer = state.get("candidate_answer", "")
+        candidate_answer = state.candidate_answer
         run_count = state.run_count
         user_query = state.query
         analysis_data = state.analysis_data

@@ -6,6 +6,7 @@
 from enum import Enum, unique
 
 class AgentEnum(Enum):
+    START = "START"
     REFLECTOR = "REFLECTOR"
     SEARCH = "SEARCH"
     MANAGER = "MANAGER"

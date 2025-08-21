@@ -13,7 +13,6 @@ from typing import Iterable, Mapping, Any, List, Dict, Optional
 from foodrec.search.search_ingredients import Search
 from foodrec.config.structure.dataset_enum import DatasetEnum
 import json
-import time
 from uuid import uuid4
 from foodrec.config.structure.paths import DATASET_PATHS, CONVERSATION
 
@@ -103,7 +102,6 @@ def simulate_query(query:str, persona_id: int, model=ModelEnum.Gemini, biase_age
     if available is not None:
         return available
     out = run_query(query, chat_id=id ,user_id=persona_id, model=model, biase_agents=biase_agent, biase_search=biase_search, print_output=print_output)
-    time.sleep(20)  # Sleep to avoid overloading the system
     return out
 
 def run_all_queries(model=ModelEnum.Gemini, biase_agent:bool=False, biase_search:bool=False, print_output:bool=False):

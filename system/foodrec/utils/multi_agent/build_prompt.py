@@ -71,7 +71,7 @@ def _allowed_actions(state: AgentState) -> List[str]:
     if AgentEnum.USER_ANALYST.value.lower() not in completed or state.run_count > 0:
         allowed.append(AgentEnum.USER_ANALYST.value)
     # If user analysis is done, allow SEARCH
-    if AgentEnum.USER_ANALYST.value.lower() in completed:
+    if AgentEnum.USER_ANALYST.value.lower() in completed and state.last_completed_agent != AgentEnum.SEARCH.value:
         allowed.append(AgentEnum.SEARCH.value)
 
     # If search is done, allow ITEM_ANALYST

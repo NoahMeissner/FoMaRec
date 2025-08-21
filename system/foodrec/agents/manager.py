@@ -200,7 +200,6 @@ class ManagerAgent(Agent):
         output_thought = self.call_thought(state=state)
         thought = self._parse_thought_output(output_thought)
         record(AgentReporter.MANAGER_Thought.name, output_thought)
-        time.sleep(10)  
         output_action = self.call_action(state=state, thought=thought)
         record(AgentReporter.MANAGER_Action.name, output_action)
 

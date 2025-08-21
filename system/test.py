@@ -186,5 +186,19 @@ example_usage()
 
 from foodrec.evaluation.create_dataset import create_dataset
 from foodrec.config.structure.dataset_enum import ModelEnum 
-df = create_dataset(model=ModelEnum.Gemini, biase_agent=True, biase_search=True, print_output=False)
+from foodrec.utils.multi_agent.get_model import get_model
+import time
+df = create_dataset(model=ModelEnum.Gemini, biase_agent=False, biase_search=False, print_output=False)
 #df.to_csv("dataset.csv", index=False)
+
+prompt= """
+You are an Interpreter Agent in a multi-agent recipe recommendation system.\n\nYour role is to interpret the user\'s natural language query and produce a clear, concise **task description** that another agent (the Manager) can use to decide what to do next.\n\n---\n\n**This is the user query:**  \n"Recommend recipes which do not have ingredient evaporated milk?"\n\nYour goal is to:\n- Understand the user\'s intent from the query.\n- Clarify vague or underspecified requests by inferring possible meanings.\n- Rephrase the query into a clear **task objective**, such as:\n  - "Search for tomato-based recipes."\n  - "Find healthy vegan recipes."\n  - "Recommend products that include tomatoes."\n  - "Determine whether the user wants a recipe or product related to tomatoes."\n\n---\n\nPlease respond **only in valid JSON**, in the following format:\n\n```json\n{\n  "RESPONSE": "<your clear task description>"\n}\n
+"""
+"""
+for i in range(0,10):
+    model = get_model(ModelEnum.GPT_OPEN_SOURCE)
+    try:
+        print(model.__call__(prompt))
+    except Exception as e:
+        print(e)
+    """
