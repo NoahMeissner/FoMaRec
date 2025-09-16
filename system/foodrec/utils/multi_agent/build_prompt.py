@@ -68,7 +68,7 @@ def _allowed_actions(state: AgentState) -> List[str]:
     allowed = []
     if AgentEnum.INTERPRETER.value.lower() not in completed or state.run_count > 0:
         allowed.append(AgentEnum.INTERPRETER.value)
-    if AgentEnum.USER_ANALYST.value.lower() not in completed or state.run_count > 0:
+    if AgentEnum.USER_ANALYST.value.lower() not in completed and AgentEnum.INTERPRETER.value.lower() in completed or state.run_count > 0:
         allowed.append(AgentEnum.USER_ANALYST.value)
     # If user analysis is done, allow SEARCH
     if AgentEnum.USER_ANALYST.value.lower() in completed and state.last_completed_agent != AgentEnum.SEARCH.value:
@@ -84,7 +84,7 @@ def _allowed_actions(state: AgentState) -> List[str]:
 
     # If reflector is done, allow FINISH
     if AgentEnum.REFLECTOR.value.lower() in completed and state.is_final:
-        allowed.append(AgentEnum.FINISH.value)
+        allowed = [AgentEnum.FINISH.value]
 
     return allowed
 
@@ -92,92 +92,72 @@ def _load_agent(ls_agent_names):
     descriptions = get_agent_description()
     return [[name, descriptions[name]] for name in ls_agent_names]
 
-"""
-def build_prompt_thought(state: AgentState) -> str:
-    sections = {
-            "reflections": _build_reflections(state),
-            "query": state.query,
-            "task_interpretation": _build_task_prompt(state),
-            "scratchpad": _build_scratchpad(state, state.manager_steps),
-            "allowed" : _allowed_actions(state)
-        }
-    available_data = _build_available_data_summary(state)
-    completed_agents = state.completed_agents
-    prompt = get_prompt(PromptEnum.THOUGHT, biased=state.biase)
-    for key, value in sections.items():
-        replacement_txt = f"{key} : {value}" if value != None else ""
-        prompt = prompt.replace(f"${key}$", str(replacement_txt))
+def next_agent(last, allowed, state):
+    print(type(last), last, type(allowed[0]), allowed)
+    sequence = [AgentEnum.INTERPRETER.value,
+                 AgentEnum.USER_ANALYST.value,
+                   AgentEnum.SEARCH.value,
+                     AgentEnum.ITEM_ANALYST.value,
+                       AgentEnum.REFLECTOR.value]
+    if AgentEnum.REFLECTOR.value == last and state.is_final:
+        return AgentEnum.FINISH.value
+    elif AgentEnum.REFLECTOR.value == last and not state.is_final:
+        return AgentEnum.SEARCH.value
+    elif len(allowed) ==1 and last != AgentEnum.INTERPRETER.value:
+        print(f"chosen{allowed[0]}")
+        return str(allowed[0])
+    try:
+        current = sequence.index(last)
+    except:
+        for a in sequence:
+            last = a if a.lower() == last.lower() else last
+        current = sequence.index(last)
+    next_agent = sequence[current+1]
+    if next_agent in allowed:
+        print(type(next_agent))
+        return str(next_agent)
 
-    rf = getattr(state, "reflection_feedback", {}) or {}
-    last_query = getattr(state, "search_query", "") or getattr(state, "query", "") or ""
-    last_completed = getattr(state, "last_completed_agent", None) or ""
-
-    prompt = prompt.replace("$last_query$", last_query)
-    prompt = prompt.replace("$last_completed$", last_completed)
-
-
-    if completed_agents:
-        prompt += f"Already called Agents: {completed_agents}"
-    if available_data:
-        prompt += f"\n\n**AVAILABLE DATA:**\n{available_data}\n"
-    if hasattr(state, 'reflector_accepted'):
-        prompt += f"\n\n**Reflector Acceptance Status:**\n{state.is_final}\n"
-    if hasattr(state, "reflection_feedback"):
-        if not state.is_final:
-            prompt += 
-ROUTING POLICY (follow strictly):
-- If the latest reflector decision is REJECT (should_continue = true):
-  1) Next step MUST be SEARCH with a rewritten query using reflection_feedback.
-  2) After SEARCH completes, run ITEM_ANALYST on the new results.
-  3) Only then call REFLECTOR again to re-evaluate.
-- Do NOT call REFLECTOR again until a new SEARCH and ITEM_ANALYST have been performed after the REJECT.
-- Call FINISH only if the reflector ACCEPTED (is_final = true).
-
-
-
-    return prompt
-
-"""
-
-def build_prompt_thought(state: AgentState) -> str:
-    sections = {
-            "reflections": _build_reflections(state),
-            "query": state.query,
-            "task_interpretation": _build_task_prompt(state),
-            "scratchpad": _build_scratchpad(state, state.manager_steps),
-            "allowed" : _allowed_actions(state)
-        }
-    available_data = _build_available_data_summary(state)
-    completed_agents = state.completed_agents
-    prompt = get_prompt(PromptEnum.THOUGHT, biased=state.biase)
-    for key, value in sections.items():
-        replacement_txt = f"{key} : {value}" if value != None else ""
-        prompt = prompt.replace(f"${key}$", str(replacement_txt))
-
-    rf = getattr(state, "reflection_feedback", {}) or {}
-    last_query = getattr(state, "search_query", "") or getattr(state, "query", "") or ""
-    last_completed = getattr(state, "last_completed_agent", None) or ""
-
-    prompt = prompt.replace("$last_query$", last_query)
-    prompt = prompt.replace("$last_completed$", last_completed)
-
-    if completed_agents:
-        prompt += f"Already called Agents: {completed_agents}"
-    if available_data:
-        prompt += f"\n\n**AVAILABLE DATA:**\n{available_data}\n"
-    if hasattr(state, 'reflector_accepted'):
-        prompt += f"\n\n**Reflector Acceptance Status:**\n{state.is_final}\n"
 
     
+def build_prompt_thought(state: AgentState) -> str:
+    sections = {
+            "reflections": _build_reflections(state),
+            "query": state.query,
+            "task_interpretation": _build_task_prompt(state),
+            "scratchpad": _build_scratchpad(state, state.manager_steps),
+            "allowed" : _allowed_actions(state)
+        }
+    available_data = _build_available_data_summary(state)
+    completed_agents = state.completed_agents
+    prompt = get_prompt(PromptEnum.THOUGHT, biased=state.biase)
+    for key, value in sections.items():
+        replacement_txt = f"{key} : {value}" if value != None else ""
+        prompt = prompt.replace(f"${key}$", str(replacement_txt))
+
+    rf = getattr(state, "reflection_feedback", {}) or {}
+    last_query = getattr(state, "search_query", "") or getattr(state, "query", "") or ""
+    last_completed = getattr(state, "last_completed_agent", None) or ""
+
+    prompt = prompt.replace("$last_query$", last_query)
+    prompt = prompt.replace("$last_completed$", last_completed)
+    prompt = prompt.replace("$recommended$", next_agent(last_completed, sections["allowed"], state))
+    """
+    if completed_agents:
+        prompt += f"Already called Agents: {completed_agents}"
+    if available_data:
+        prompt += f"\n\n**AVAILABLE DATA:**\n{available_data}\n"
+    if hasattr(state, 'reflector_accepted'):
+        prompt += f"\n\n**Reflector Acceptance Status:**\n{state.is_final}\n"
+    """
+    
     # Add explicit instruction about the cycle
-    prompt += """
+    prompt = prompt.replace("$cycle$", """
 REMEMBER THE CYCLE:
 1. SEARCH (based on reflector feedback if rejected)
 2. ITEM_ANALYST (analyze new results)  
 3. REFLECTOR (evaluate if results are now acceptable)
 4. If accepted → FINISH, if rejected → back to step 1 with new feedback
-
-"""
+""")
 
     return prompt
 

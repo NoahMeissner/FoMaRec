@@ -45,7 +45,7 @@ class IndexElastic:
         self.dataset = self.load_dataset(dataset_name)
         print(self.dataset.columns)
         self.dataset_name = dataset_name
-        print("Kochbar Finished")
+        print("Dataset Loaded")
 
     def load_dataset(self, dataset_name):
         if dataset_name == DatasetEnum.KOCHBAR:

@@ -4,6 +4,7 @@
     This file is responsible for the metric calculation of the biase evaluation.
 """
 from typing import List, Dict
+from typing import Any, Dict, List, Tuple
 
 
 """
@@ -101,3 +102,145 @@ def accuracy(y_pred: List[bool]):
     hit = sum(y_pred)
     return hit / len(y_pred) if len(y_pred) > 0 else 0.0
 
+from typing import List, Dict, Tuple
+
+def pr_curve_points(y_ranked: List[bool]) -> Tuple[List[float], List[float]]:
+    """
+    Erzeuge die (Recall, Precision)-Punkte einer PR-Kurve für eine Ranking-Liste.
+    y_ranked: Bool-Liste in Rangreihenfolge (True=relevant).
+    Gibt zwei Listen gleicher Länge zurück: recall_pts, precision_pts.
+    Es werden nur Punkte an Positionen erzeugt, an denen ein relevanter Treffer vorkommt.
+    """
+    total_pos = sum(y_ranked)
+    if total_pos == 0:
+        return [0.0], [1.0]  # konventionell: leere PR-Kurve (Precision=1 bei Recall=0)
+
+    recall_pts = []
+    precision_pts = []
+
+    tp = 0
+    for k, is_rel in enumerate(y_ranked, start=1):
+        if is_rel:
+            tp += 1
+            recall = tp / total_pos
+            precision = tp / k
+            recall_pts.append(recall)
+            precision_pts.append(precision)
+
+    return recall_pts, precision_pts
+
+
+def pr_auc(y_ranked: List[bool]) -> float:
+    """
+    PR-AUC für EIN Ranking.
+    Identisch zur Average Precision (AP) mit stückweiser Integration:
+    Summe über alle relevanten Positionen von (ΔRecall * Precision@k).
+    """
+    total_pos = sum(y_ranked)
+    if total_pos == 0:
+        return 0.0
+
+    tp = 0
+    auc = 0.0
+    prev_recall = 0.0
+
+    for k, is_rel in enumerate(y_ranked, start=1):
+        if is_rel:
+            tp += 1
+            recall_k = tp / total_pos
+            precision_k = tp / k
+            auc += (recall_k - prev_recall) * precision_k
+            prev_recall = recall_k
+
+    return auc
+
+
+def mean_pr_auc_over_queries(pred_by_query: Dict[str, List[bool]]) -> float:
+    """
+    Mittelwert der PR-AUCs über mehrere Queries (macro).
+    """
+    if not pred_by_query:
+        return 0.0
+    vals = [pr_auc(y) for y in pred_by_query.values()]
+    return sum(vals) / len(vals)
+
+from typing import Dict, List
+
+def bias_conformity_rate_at_k(pred_by_query: Dict[str, List[bool]], k: int) -> float:
+    """
+    Berechnet Bias Conformity Rate@k über mehrere Queries.
+    pred_by_query: Dict[query -> Liste von Bool (True = biased, False = unbiased)]
+    k: Cutoff für Top-k
+    """
+    if not pred_by_query:
+        return 0.0
+
+    rates = []
+    for preds in pred_by_query.values():
+        if not preds:
+            continue
+        top_k = preds[:k]  # nimm die Top-k Elemente
+        rate = sum(top_k) / len(top_k)
+        rates.append(rate)
+
+    return sum(rates) / len(rates) if rates else 0.0
+
+import matplotlib.pyplot as plt
+from typing import Dict, List, Tuple
+
+def _to_bool_list_safe(seq: List[Any]) -> List[bool] | None:
+    """
+    Versucht, eine Liste in Booleans zu casten.
+    Falls nicht möglich (z.B. weil Strings mit Queries enthalten sind) -> None.
+    """
+    true_set  = {"true", "1", "yes", "y", "t"}
+    false_set = {"false", "0", "no", "n", "f"}
+    out = []
+    for x in seq:
+        if isinstance(x, bool):
+            out.append(x)
+        elif isinstance(x, (int, float)) and x in (0, 1):
+            out.append(bool(x))
+        elif isinstance(x, str):
+            s = x.strip().lower()
+            if s in true_set:
+                out.append(True)
+            elif s in false_set:
+                out.append(False)
+            else:
+                # ungültiger String -> wir geben None zurück
+                return None
+        else:
+            return None
+    return out
+
+def plot_pr_curves(results: Dict[str, Tuple[List[Any], List[Any]]], title: str = "PR Curves"):
+    """
+    results: { name: (y_true, y_pred_ranked) }
+    Zeichnet nur die Kurven, die valide Boolean-Listen liefern.
+    """
+    plt.figure(figsize=(7, 7))
+
+    any_curve = False
+    for name, (y_true, y_pred) in results.items():
+        y_pred_bool = _to_bool_list_safe(y_pred)
+        if y_pred_bool is None or not y_pred_bool:
+            print(f"⚠️ Überspringe {name}: keine gültigen Bool-Werte.")
+            continue
+
+        recall_pts, precision_pts = pr_curve_points(y_pred_bool)
+        auc_val = pr_auc(y_pred_bool)
+        plt.plot(recall_pts, precision_pts, marker="o", label=f"{name} (AUC={auc_val:.3f})")
+        any_curve = True
+
+    if not any_curve:
+        raise ValueError("Keine gültigen Kurven gefunden – überprüfe dein Input-Format.")
+
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    plt.title(title)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.grid(True)
+    plt.legend()
+    plt.show()

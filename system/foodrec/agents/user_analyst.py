@@ -13,7 +13,7 @@ from foodrec.tools.info_database import InformationDataBase
 from foodrec.utils.multi_agent.output import output_user_analyst
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
-
+from foodrec.config.structure.paths import CONVERSATION
 
 class UserItemAnalystAgent(Agent):
     """Agent zur Analyse von User Informationen"""

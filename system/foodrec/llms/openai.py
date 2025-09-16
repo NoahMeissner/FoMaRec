@@ -9,12 +9,15 @@ from langchain_openai import ChatOpenAI, OpenAI
 from langchain.schema import HumanMessage
 from dotenv import load_dotenv
 import os
-
-
+from foodrec.tools.conversation_manager import record
+from foodrec.config.structure.paths import CONVERSATION
+from foodrec.config.structure.dataset_enum import ModelEnum
 from foodrec.llms.basellm import BaseLLM
 
 class AnyOpenAILLM(BaseLLM):
-    def __init__(self, model_name: str = 'o4-mini-2025-04-16', json_mode: bool = False, *args, **kwargs):
+    #gpt-5-mini-2025-08-07
+    #o4-mini-2025-04-16
+    def __init__(self, model_name: str = 'gpt-5-mini-2025-08-07', json_mode: bool = False,test=False, *args, **kwargs):
         """Initialize the OpenAI LLM.
 
         Args:
@@ -23,11 +26,13 @@ class AnyOpenAILLM(BaseLLM):
         """
         self.model_name = model_name
         self.json_mode = json_mode
+        self.test = test
         load_dotenv() 
         api_key = os.getenv("OPENAI") 
         if api_key is None:
             raise ValueError("OPENAI_API_KEY environment variable not set")
         kwargs['api_key'] = api_key
+        self.model_record = ModelEnum.OpenAI.name
 
 
         if json_mode and self.model_name not in ['o4-mini-2025-04-16']:
@@ -61,13 +66,20 @@ class AnyOpenAILLM(BaseLLM):
         Returns:
             `str`: The OpenAI LLM output.
         """
+
         if self.model_type == 'completion':
-            return self.model.invoke(prompt).content.replace('\n', ' ').strip()
+            respone =  self.model.invoke(prompt)
+            print(response.response_metadata)       # Token, Finish Reason, Model-Infos
+            print(response.additional_kwargs)       # Safety + Raw Gemini Response
+            return respone.content.replace('\n', ' ').strip()
         else:
-            return self.model.invoke(
+            response =  self.model.invoke(
                 [
                     HumanMessage(
                         content=prompt,
                     )
                 ]
-            ).content.replace('\n', ' ').strip()
+            )
+            if not self.test:
+                record("OPENAI_OUTPUT","TOKENS, FINISH Reason", response.response_metadata)
+            return response.content.replace('\n', ' ').strip()

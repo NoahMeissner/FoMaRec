@@ -14,7 +14,7 @@ from foodrec.utils.multi_agent.output import output_reflector
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
 from foodrec.utils.multi_agent.swap_recipe_list import get_list
-
+from foodrec.config.structure.paths import CONVERSATION
 class ReflectorAgent(Agent):
     """Agent zur Reflexion und Qualitätsbewertung"""
     
@@ -41,7 +41,7 @@ class ReflectorAgent(Agent):
         if analysis_data:
             context_info.append(f"User analysis data: {json.dumps(analysis_data, indent=2)}")
         if search_results:
-            context_info.append(f"Available search results: {search_results}")
+            context_info.append(f"Recommended Recipes: {search_results}")
         
         context_section = "\n".join(context_info) if context_info else "No additional context available."
         prompt = get_prompt(PromptEnum.REFLECTOR,state.biase)
@@ -51,7 +51,7 @@ class ReflectorAgent(Agent):
         record(AgentReporter.REFLECTOR_Prompt.name, prompt)
         return prompt
     
-    def _parse_llm_response(self, response: str) -> tuple[bool, bool, str]:
+    def _parse_llm_response(self,state:AgentState, response: str) -> tuple[bool, bool, str]:
         """Parsed die JSON-Antwort vom LLM und extrahiert Entscheidung und Feedback"""
         
         try:
@@ -67,6 +67,8 @@ class ReflectorAgent(Agent):
                 decision = result.get("DECISION", "ACCEPT").upper()
                 reasoning = result.get("REASONING", "")
                 feedback = result.get("FEEDBACK", "")
+                if feedback == None:
+                    feedback = "No Feedback"
 
                 # Kombiniere Reasoning und Feedback für vollständiges Feedback
                 combined_feedback = f"{reasoning}"
@@ -114,7 +116,7 @@ class ReflectorAgent(Agent):
             model = get_model(state.model)
             try:
                 llm_response = model(prompt)
-                is_final, should_continue, feedback = self._parse_llm_response(llm_response)
+                is_final, should_continue, feedback = self._parse_llm_response(state, llm_response)
                 print(f"is_final {is_final}")
                 # Sicherheitscheck: Nach 8 Iterationen immer akzeptieren
                 if run_count >= 4:

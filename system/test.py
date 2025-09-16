@@ -40,9 +40,6 @@ from foodrec.tools.search_ingredient import IngredientNormalisation
 ING = IngredientNormalisation()
 print(ING.advanced_hybrid_search("bread"))
 """
-#from foodrec.evaluation.ingredient_normalisation import run_comprehensive_evaluation
-
-# run_comprehensive_evaluation(sample_percentage=0.2, use_stratified=False)
 """
 import subprocess
 from elasticsearch import Elasticsearch
@@ -180,25 +177,16 @@ def example_usage():
 example_usage()
 """
 
-#from foodrec.system_request import run_query
-#from foodrec.config.structure.dataset_enum import ModelEnum
-#out = run_query("I want to eat sth quick veggi and italian",chat_id="ALINA", model=ModelEnum.Gemini, biase=True)
-
 from foodrec.evaluation.create_dataset import create_dataset
 from foodrec.config.structure.dataset_enum import ModelEnum 
 from foodrec.utils.multi_agent.get_model import get_model
-import time
-df = create_dataset(model=ModelEnum.Gemini, biase_agent=False, biase_search=False, print_output=False)
-#df.to_csv("dataset.csv", index=False)
+from playsound import playsound
 
-prompt= """
-You are an Interpreter Agent in a multi-agent recipe recommendation system.\n\nYour role is to interpret the user\'s natural language query and produce a clear, concise **task description** that another agent (the Manager) can use to decide what to do next.\n\n---\n\n**This is the user query:**  \n"Recommend recipes which do not have ingredient evaporated milk?"\n\nYour goal is to:\n- Understand the user\'s intent from the query.\n- Clarify vague or underspecified requests by inferring possible meanings.\n- Rephrase the query into a clear **task objective**, such as:\n  - "Search for tomato-based recipes."\n  - "Find healthy vegan recipes."\n  - "Recommend products that include tomatoes."\n  - "Determine whether the user wants a recipe or product related to tomatoes."\n\n---\n\nPlease respond **only in valid JSON**, in the following format:\n\n```json\n{\n  "RESPONSE": "<your clear task description>"\n}\n
-"""
-"""
-for i in range(0,10):
-    model = get_model(ModelEnum.GPT_OPEN_SOURCE)
-    try:
-        print(model.__call__(prompt))
-    except Exception as e:
-        print(e)
-    """
+import time
+try:
+    df = create_dataset(model=ModelEnum.LLAMA, biase_agent=False, biase_search=True, print_output=False)
+except Exception as e:
+    for i in range(0,3):
+        playsound("alarm.mp3")
+    raise e
+

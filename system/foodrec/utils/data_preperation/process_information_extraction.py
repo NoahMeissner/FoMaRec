@@ -25,6 +25,47 @@ def parse_calories(calories):
         return calorie_map.get(calories.lower(), None)
     return None
 
+def parse_fat(fat):
+    if isinstance(fat, str):
+        calorie_map = {
+            "less": [0, 10],
+            "average": [10, 20],
+            "lot": [20, 200]
+        }
+        return calorie_map.get(fat.lower(), None)
+    return None
+
+def parse_fat(fat):
+    if isinstance(fat, str):
+        calorie_map = {
+            "less": [0, 10],
+            "average": [10, 20],
+            "lot": [20, 200]
+        }
+        return calorie_map.get(fat.lower(), None)
+    return None
+
+def parse_carbs(carbs):
+    if isinstance(carbs, str):
+        calorie_map = {
+            "less": [0, 10],
+            "average": [10, 20],
+            "lot": [20, 200]
+        }
+        return calorie_map.get(carbs.lower(), None)
+    return None
+
+
+def parse_protein(fat):
+    if isinstance(fat, str):
+        calorie_map = {
+            "less": [0, 10],
+            "average": [10, 25],
+            "lot": [25, 200]
+        }
+        return calorie_map.get(fat.lower(), None)
+    return None
+
 def parse_time(time):
     '''
     Converts time to numeric scale.
@@ -57,7 +98,7 @@ def process_cuisine(ls):
 
 
         
-def process_data(time, cuisine, calories, ingredients_avoid, ingredients_included):
+def process_data(time, cuisine, calories, ingredients_avoid, ingredients_included, protein, fat, carbohydrates):
     '''
         time: fast, slow, or []
         cuisine: europe, middle_east, latin, asia
@@ -70,13 +111,20 @@ def process_data(time, cuisine, calories, ingredients_avoid, ingredients_include
     calories = None if calories is None or calories == [] else parse_calories(calories)
     ingredients_avoid = None if ingredients_avoid is None or ingredients_avoid == [] else ingredients_avoid
     ingredients_included = None if ingredients_included is None or ingredients_included == [] else ingredients_included
+    protein = None if protein is None or protein == [] else parse_protein(protein)
+    fat = None if fat is None or fat == [] else parse_fat(fat)
+    carbohydrates = None if carbohydrates is None or carbohydrates == [] else parse_carbs(carbohydrates)
+
 
     return {
         "time": time,
         "cuisine": cuisine,
         "calories": calories,
         "include": ingredients_included,
-        "avoid": ingredients_avoid
+        "avoid": ingredients_avoid,
+        "protein": protein,
+        "fat": fat,
+        "carbohydrates":carbohydrates
     }
 
 

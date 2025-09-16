@@ -6,8 +6,12 @@ Fields to Extract
 time: "fast", "slow", or [] if not mentioned
 ingredients_included: a list of ingredients the user wants (e.g., ["banana"])
 ingredients_avoid: a list of ingredients the user wants to avoid (e.g., ["pepper"])
-cuisine: one or more of the following options, based on what fits or is implied: ["europe", "middle_east", "latin", "asia"]
+cuisine: one or more of the following options, based on what fits or is implied: ["europe", "middle_east", "latin", "asia", "north american"]
 calories: "less", "average", "lot", or [] if not mentioned
+carbohydrates: "less", "average", "lot", or [] if not mentioned
+protein: "less", "average", "lot", or [] if not mentioned
+fat: "less", "average", "lot", or [] if not mentioned
+
 
 Examples
 Request: "I am looking for a fast recipe with bananas"
@@ -17,7 +21,10 @@ Return:
   "ingredients_included": ["banana"],
   "ingredients_avoid": [],
   "cuisine": [ "europe","latin", "middle_east"],
-  "calories": []
+  "calories": [],
+  "protein": [],
+  "carbohydrates": [],
+  "fat": []
 }
 Request: "Make me something light and quick, no pepper please"
 Return:
@@ -26,16 +33,22 @@ Return:
   "ingredients_included": [],
   "ingredients_avoid": ["pepper"],
   "cuisine": ["latin", "europe", "asia"],
-  "calories": ["less"]
+  "calories": ["less"],
+  "protein": [],
+  "carbohydrates": [],
+  "fat": ["less"]
 }
-Request: "We need a hearty meal, ideally Asian cuisine"
+Request: "We need a hearty meal with lot of proteins, ideally Asian cuisine"
 Return:
 {
   "time": "slow",
   "ingredients_included": [],
   "ingredients_avoid": [],
   "cuisine": ["asia"],
-  "calories": ["lot"]
+  "calories": ["lot"],
+  "protein": ["lot"],
+  "carbohydrates": [],
+  "fat": []
 }
 
 Output Format:
@@ -46,7 +59,10 @@ Return the result strictly as a JSON object, like this:
   "ingredients_included": [],
   "ingredients_avoid": [],
   "cuisine": [],
-  "calories": []
+  "calories": [],
+  "protein": [],
+  "carbohydrates": [],
+  "fat": []
 }
 
 USER REQUEST: $INPUT$

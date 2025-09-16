@@ -62,11 +62,11 @@ def fuzzy_match_score(s1, s2):
     # Combine metrics with weights
     combined_score = (
         0.4 * sequence_match +
-        0.3 * edit_distance +
-        0.3 * jaro_winkler
+        0.1 * edit_distance +
+        0.4 * jaro_winkler
     )
     
-    return combined_score
+    return [combined_score, jaro_winkler, edit_distance]
 
 def partial_match_score(query, term):
     """Calculate partial matching score for compound words"""
@@ -86,7 +86,7 @@ def partial_match_score(query, term):
             if len(q_word) > 3 and len(t_word) > 3:
                 if q_word in t_word or t_word in q_word:
                     partial_matches += 0.5
-                elif fuzzy_match_score(q_word, t_word) > 0.8:
+                elif fuzzy_match_score(q_word, t_word)[0] > 0.8:
                     partial_matches += 0.3
     
     total_score = (exact_matches + partial_matches) / max(len(query_words), len(term_words))
@@ -131,7 +131,6 @@ def get_ngram_candidates(query, ngram_index, terms, n=3, top_k=50):
         remaining = set(range(len(terms))) - set(top_candidates)
         additional = random.sample(list(remaining), min(top_k - len(top_candidates), len(remaining)))
         top_candidates.extend(additional)
-    
     return top_candidates
 
 
@@ -141,24 +140,16 @@ class IngredientNormalisation:
         EL = EmbeddingLoader(dataset_name)
         self.dataset = EL.get_embeddings()
         self.embedder = Embedder()
+        self.english_terms = [value[0] for value in self.dataset]   
+        self.ngram_index = create_ngram_index(self.english_terms)
 
-    def advanced_hybrid_search(self, query, top_k=5):
+
+    def normalize(self, query, top_k=5, more_information = False):
         """Advanced hybrid search with multiple strategies"""
         query_normalized = self.embedder.advanced_normalize(query)
-        
-        # Extract data from dataset first
-        english_terms = [value[0] for value in self.dataset]
-        embeddings = []
-        for value in self.dataset:
-            if isinstance(value[1], str):
-                # Convert string representation back to numpy array
-                embedding = np.fromstring(value[1].strip('[]'), sep=',')
-            else:
-                embedding = value[1]
-            embeddings.append(embedding)
-        
-        # Now create the ngram index
-        ngram_index = create_ngram_index(english_terms)
+        english_terms =self.english_terms
+        ngram_index = self.ngram_index
+
         
         # Strategy 1: Exact match
         if query_normalized in english_terms:
@@ -168,39 +159,23 @@ class IngredientNormalisation:
         # Strategy 2: Get candidates using n-gram index for efficiency
         candidates = get_ngram_candidates(query_normalized, ngram_index, english_terms)
         
-        # Strategy 3: Semantic similarity for candidates
-        query_emb = self.embedder.get_embedding(query_normalized).reshape(1, -1)
         
         results = []
+        ngram_truth = english_terms[candidates[0]]
         for idx in candidates:
-            if idx < len(embeddings):
                 term = english_terms[idx]
-                
-                # Calculate semantic similarity
-                term_emb = embeddings[idx].reshape(1, -1)
-                semantic_score = cosine_similarity(query_emb, term_emb)[0][0]
-                
+                                
                 # Calculate fuzzy similarity
-                fuzzy_score = fuzzy_match_score(query_normalized, term)
-                
-                # Calculate partial match score
-                partial_score = partial_match_score(query_normalized, term)
-                
-                # Calculate length penalty (prefer similar length terms)
-                len_penalty = 1.0 - abs(len(query_normalized) - len(term)) / max(len(query_normalized), len(term), 1)
-                
-                # Combine scores with dynamic weights
-                if partial_score > 0.5:  # Strong partial match
-                    combined_score = 0.4 * semantic_score + 0.3 * fuzzy_score + 0.2 * partial_score + 0.1 * len_penalty
-                else:  # Rely more on semantic and fuzzy
-                    combined_score = 0.5 * semantic_score + 0.4 * fuzzy_score + 0.05 * partial_score + 0.05 * len_penalty
-                
-                results.append([term, combined_score, semantic_score, fuzzy_score, partial_score])
+                fuzzy_score, jaro_winkler, edit_distance  = fuzzy_match_score(query_normalized, term)
+                                
+                results.append([term, jaro_winkler, ngram_truth, fuzzy_score, edit_distance])
+
+        if more_information:
+            return results
         
         # Sort by combined score
         results.sort(key=lambda x: x[1], reverse=True)
         return results[0]
-
 
   
 

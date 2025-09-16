@@ -8,6 +8,7 @@ IMPORTANT:
     1. $query$
     2. $task_interpretation$
     3. $scratchpad$
+    4. $reflections$
 - Never invent or assume details not given in the above variables.
 
 Example Thought Process (do NOT copy details from this example):
@@ -19,24 +20,26 @@ Thought: I have both search results and preferences. I can order them and analys
 Thought: I should check if my recommendations align before finalizing.
 Thought: Reflector accepted, so I can finish.
 
-$allowed$
-
-Contextual Information:
-$query$
-$task_interpretation$
-$scratchpad$
-$reflections$
+$cycle$
 
 SEARCH CONTEXT
 - LAST_SEARCH_QUERY: $last_query$
 - LAST_COMPLETED_AGENT: $last_completed$
+- Recommended Next Agent: $recommended$
+- Allowed Agents: $allowed$
 
 Your goal is to understand as much as possible from the user and their needs to make better recommendations.
 
 Now decide the next step and write an ANSWER sentence which underlines your thoughts.
 Use only the allowed actions: $allowed$
 
+OUTPUT FORMAT (strict):
+Return **only** valid JSON, structured exactly like this:
 Respond ONLY in the following JSON format:
 {
     "ANSWER": "<YOUR ANSWER SENTENCE>"
 }
+
+FORMAT RULES:
+- NO other fields, no comments, no text outside the JSON.
+- Make sure the JSON is valid (no trailing commas).

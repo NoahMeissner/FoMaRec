@@ -12,16 +12,8 @@ class CuisineClassifier:
     def __init__(self, dataset=None):
         print("🚀 Initializing CuisineClassifier...")
 
-        if dataset is None:
-            base_path = "model"
-        elif dataset == DatasetEnum.ALL_RECIPE:
-            base_path = "model/all_recipe"
-        elif dataset == DatasetEnum.KOCHBAR:
-            base_path = "model/kochbar"
-        else:
-            raise ValueError(f"❌ Unsupported dataset: {dataset}")
 
-        components = ["cuisine_classifier", "vectorizer", "label_encoder"]
+        components = ["cuisine_pipeline", "label_encoder"]
         paths = {}
 
         print("📡 Downloading files from Hugging Face Hub...")
@@ -30,7 +22,7 @@ class CuisineClassifier:
             try:
                 paths[name] = hf_hub_download(
                     repo_id="NoahMeissner/CuisineClassifier", 
-                    filename=f"{base_path}/{name}.joblib"
+                    filename=f"{name}.joblib"
                 )
                 print(f"✅ {name} downloaded.")
             except Exception as e:
@@ -39,10 +31,8 @@ class CuisineClassifier:
 
         print("📦 Loading model components with joblib...")
         try:
-            self.model = joblib.load(paths["cuisine_classifier"])
+            self.model = joblib.load(paths["cuisine_pipeline"])
             print("✅ Model loaded.")
-            self.vectorizer = joblib.load(paths["vectorizer"])
-            print("✅ Vectorizer loaded.")
             self.label_encoder = joblib.load(paths["label_encoder"])
             print("✅ Label encoder loaded.")
         except Exception as e:
@@ -53,7 +43,6 @@ class CuisineClassifier:
 
     def classify(self, text_input):
         data = " ".join(text_input)
-        X_input = self.vectorizer.transform([data])
-        predicted_class = self.model.predict(X_input)
+        predicted_class = self.model.predict([data])
         predicted_label = self.label_encoder.inverse_transform(predicted_class)
         return predicted_label

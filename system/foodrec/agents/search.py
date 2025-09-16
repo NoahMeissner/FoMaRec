@@ -20,6 +20,7 @@ from foodrec.agents.agent_names import AgentEnum
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
 import random
+from foodrec.config.structure.paths import CONVERSATION
 from typing import Iterable, Mapping, Any, List, Dict, Optional
 from uuid import uuid4
 
@@ -75,7 +76,7 @@ class SearcherAgent(Agent):
             prompt = prompt.replace("$task_description$", str(task_description))
             prompt = prompt.replace("$analysis_data$", str(analysis_data))
             prompt = prompt.replace("$FEEDBACK$", str(feedback))
-            record(AgentReporter.SEARCH_Prompt.name, prompt)
+            record(AgentReporter.SEARCH_Prompt.name, prompt, path=CONVERSATION / state.model.name)
             return prompt
 
         else:
@@ -84,7 +85,7 @@ class SearcherAgent(Agent):
             prompt = get_prompt(PromptEnum.SEARCH, state.biase)
             prompt = prompt.replace("$task_description$", str(task_description))
             prompt = prompt.replace("$analysis_data$", str(analysis_data))
-            record(AgentReporter.SEARCH_Prompt.name, prompt)
+            record(AgentReporter.SEARCH_Prompt.name, prompt, path=CONVERSATION / state.model.name)
             return prompt
     
     
@@ -146,7 +147,8 @@ class SearcherAgent(Agent):
         if state.feedback != None and state.feedback != "":
             if not error:
                 before = state.search_results
-                result.extend(before)
+                if before is not None:
+                    result.extend(before)
         state.search_results = result
         record(AgentReporter.Search_Results.name, "SEARCH_RESULTS", result)
         state.search_query = response

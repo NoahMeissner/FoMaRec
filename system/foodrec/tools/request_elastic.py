@@ -56,16 +56,42 @@ def request_elastic(request_embedding, data, es_client, index_name="database"):
         })
 
     # Calories (range)
+    if data.get("protein"):
+        filter_clauses.append({
+            "range": {
+                "protein": {
+                    "gte": data["protein"][0],
+                    "lte": data["protein"][1]
+                }
+            }
+        })
+    if data.get("fat"):
+        filter_clauses.append({
+            "range": {
+                "fat": {
+                    "gte": data["fat"][0],
+                    "lte": data["fat"][1]
+                }
+            }
+        })
+    if data.get("carbohydrates"):
+        filter_clauses.append({
+            "range": {
+                "carbohydrates": {
+                    "gte": data["carbohydrates"][0],
+                    "lte": data["carbohydrates"][1]
+                }
+            }
+        })
     if data.get("calories"):
         filter_clauses.append({
             "range": {
-                "calories": {
+                "kcal": {
                     "gte": data["calories"][0],
                     "lte": data["calories"][1]
                 }
             }
         })
-
     # Optional: Frage → Embedding-Suche
     embedding = request_embedding
 

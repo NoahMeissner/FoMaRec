@@ -1,7 +1,7 @@
 # Noah Meissner 19.08.2025
 
 from foodrec.agents.agent_names import AgentEnum
-
+import numpy as np
 def create_next_dict():
     return {
         AgentEnum.START.value: [AgentEnum.INTERPRETER.value, AgentEnum.USER_ANALYST.value],
@@ -43,3 +43,13 @@ def final_episode_reward(actions, gamma=0.9, normalize=False):
         weight_sum = (1 - gamma**T) / (1 - gamma) if gamma != 1 else T
         return G / weight_sum
     return G
+
+
+def routing_accuracy(actions):
+    ls = []
+    for index, a in enumerate(actions): 
+        previous = actions[:index]
+        before_actions_ground_truth = next_actions(previous) 
+        ls.append(step_reward(a, before_actions_ground_truth)) 
+    final =[True if obj == 1 else False for obj in ls]
+    return np.mean(final)

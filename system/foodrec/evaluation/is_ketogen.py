@@ -2,7 +2,7 @@
 
 def calc_keto_ratio(protein_g, carbs_g, fat_g):            
     # Ketogenic ratio (classic formula)
-    return fat_g / (protein_g + carbs_g) if (protein_g + carbs_g) > 0 else float('inf')
+    return fat_g / (protein_g + carbs_g) if (protein_g + carbs_g) > 0 else 0
 
 
 

@@ -19,7 +19,7 @@ from foodrec.agents.agent_names import AgentEnum
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
 from foodrec.evaluation.is_ketogen import is_ketogenic
-
+from foodrec.config.structure.paths import CONVERSATION
 
 
 class ItemAnalystAgent(Agent):
@@ -77,6 +77,7 @@ class ItemAnalystAgent(Agent):
         try:
             parsed = json.loads(json_str)
         except json.JSONDecodeError as e:
+            print(f"❗️ ITEM ANALYST ERROR: Invalid response format: {response}")
             self.no_response = True
             return json_str
 

@@ -20,13 +20,16 @@ from foodrec.tools.request_elastic import request_elastic
 
 
 
-def process_information(information, normalizer):
-    ingredients_avoid = [normalizer.advanced_hybrid_search(obj, top_k=5)[0] for obj in information['ingredients_avoid']]
-    ingredients_inclued = [normalizer.advanced_hybrid_search(obj, top_k=5)[0] for obj in information['ingredients_included']]
+def process_information(information, normalizer: IngredientNormalisation):
+    ingredients_avoid = [normalizer.normalize(obj, top_k=5)[0] for obj in information['ingredients_avoid']]
+    ingredients_inclued = [normalizer.normalize(obj, top_k=5)[0] for obj in information['ingredients_included']]
     time = information['time']
     cuisine = information['cuisine']
     calories = information['calories']
-    return process_data(time, cuisine, calories, ingredients_avoid, ingredients_inclued)
+    protein = information['protein']
+    fat = information['fat']
+    carbohydrates = information['carbohydrates']
+    return process_data(time, cuisine, calories, ingredients_avoid, ingredients_inclued, protein, fat, carbohydrates)
 
 class Search:
 

@@ -3,3 +3,5 @@
 """
 Goal of this script is the intialisation of the Project
 """
+from playsound import playsound
+playsound("alarm.mp3")

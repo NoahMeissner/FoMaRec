@@ -24,11 +24,28 @@ Cooking time (shorter = better)
 
 Favorite ingredients (bonus points)
 
-Output format:
-
+OUTPUT FORMAT (strict):
+Return **only** valid JSON, structured exactly like this:
 {
-  "RECIPE1": RECIPEID,
-  "RECIPE1_EXPLANATION": "<One paragraph explanation referencing keto suitability, time, cuisine, and ingredient fit>",
-  "RECIPE2": RECIPEID,
+  "RECIPE1": "<RECIPE_ID>",
+  "RECIPE1_EXPLANATION": "<short explanation of why it is ranked here>",
+  "RECIPE2": "<RECIPE_ID>",
   "RECIPE2_EXPLANATION": "<...>"
+  // add RECIPE3/4/5 if applicable
+}
+
+FORMAT RULES:
+- Only keys in the pattern RECIPE{n} and RECIPE{n}_EXPLANATION (n starts at 1, no gaps).
+- Values for RECIPE{n} are the recipe IDs (string).
+- Explanations: short (1–3 sentences), only about the ranking.
+- NO other fields, no comments, no text outside the JSON.
+- Return at most ${k} recipes (fewer if filters remove some).
+- Make sure the JSON is valid (no trailing commas).
+
+EXAMPLE (just structural illustration; contents will differ):
+{
+  "RECIPE1": "r_102",
+  "RECIPE1_EXPLANATION": "Italian cuisine as requested; fits diet; 20 min < max; contains favorite ingredient tomato.",
+  "RECIPE2": "r_089",
+  "RECIPE2_EXPLANATION": "Also Italian; 18 min; no allergens; slightly fewer favorite ingredients."
 }

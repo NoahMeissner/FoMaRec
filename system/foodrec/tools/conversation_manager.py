@@ -28,9 +28,9 @@ def _cid(env_override: Optional[str] = None) -> str:
         raise RuntimeError("CHAT_ID not set")
     return cid
 
-def record(role: str, content: str, meta: Optional[Dict[str, Any]] = None, chat_id: Optional[str] = None):
+def record(role: str, content: str, meta: Optional[Dict[str, Any]] = None, chat_id: Optional[str] = None, path = None):
     cid = _cid(chat_id)
-    path = LOG_DIR / f"{cid}.jsonl"
+    p = LOG_DIR / f"{cid}.jsonl"
     entry = {
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "chat_id": cid,
@@ -38,7 +38,7 @@ def record(role: str, content: str, meta: Optional[Dict[str, Any]] = None, chat_
         "content": content,
         "meta": meta or None,
     }
-    with open(path, "a", encoding="utf-8") as f:
+    with open(p, "a", encoding="utf-8") as f:
         _lock(f)
         f.write(json.dumps(entry, ensure_ascii=False))
         f.write("\n")

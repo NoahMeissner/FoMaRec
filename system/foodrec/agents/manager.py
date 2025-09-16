@@ -25,6 +25,7 @@ import re
 import time 
 from foodrec.tools.conversation_manager import record
 import json
+from foodrec.config.structure.paths import CONVERSATION
 from foodrec.utils.multi_agent.build_prompt import build_prompt_thought, build_prompt_action
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 
@@ -57,10 +58,13 @@ class ManagerAgent(Agent):
         return {"next_agent", "candidate_answer", "manager_steps", "scratchpad"}
         
     def call_thought(self, state):
-        model = get_model(state.model)
-        prompt = build_prompt_thought(state)
-        record(AgentReporter.MANAGER_Thought_Prompt.name, prompt)
-        return model.__call__(prompt)
+        try:
+            model = get_model(state.model)
+            prompt = build_prompt_thought(state)
+            record(AgentReporter.MANAGER_Thought_Prompt.name, prompt)
+            return model.__call__(prompt)
+        except Exception as e:
+            print(e)
 
     def call_action(self, state, thought):
         model = get_model(state.model)
@@ -98,89 +102,104 @@ class ManagerAgent(Agent):
     
     def convert_str_json(self, response: str) -> json:
         try:
-            response = response.replace("*","")
+            response = response.replace("*", "")
             json_start = response.find('{')
             json_end = response.rfind('}') + 1
-                
+
             if json_start != -1 and json_end > json_start:
                 json_str = response[json_start:json_end]
                 result = json.loads(json_str)
-            return result
+                return result
         except:
-            print("#"*20+"Error"+20*"#")
+            print("#"*20 + "Error" + 20*"#")
             print(response)
 
-
+            # find() gibt int zurück → prüfe auf -1 statt direkt auf truthy
+            if response.find('{') != -1:
+                if response.find('}') == -1:
+                    return self.convert_str_json(response=response + '}')
+            return response
+    
     def _parse_thought_output(self, model_output: str) -> str:
-        structured_ouput = self.convert_str_json(model_output)
-        result = structured_ouput.get("ANSWER", None)
-        if result == None:
-            print("FALLBACK")
-        return result
+        try:
+            structured_ouput = self.convert_str_json(model_output)
+            result = structured_ouput.get("ANSWER", None)
+            if result is None:
+                return model_output
+            return result
+        except:
+            print(model_output)
+            return model_output
     
     def _parse_action_output(self, model_output: str) -> str:
         structured_ouput = self.convert_str_json(model_output)
         agent_name = structured_ouput.get("Agent", None)
         reqeust = structured_ouput.get("Request", None)
+        if agent_name == None:
+            print(model_output)
+            print("error")
         return [agent_name, reqeust]
     
     
     def _execute_action(self, state: AgentState, step: ManagerStep):
-        action = step.action
-        action_name = (AgentEnum(a.upper()).name if (a := action[0]) and isinstance(a, str) else None)
-        request = action[1]
-        if action_name != None:
-            if action_name == AgentEnum.INTERPRETER.name:
-                if state.task_description and AgentEnum.INTERPRETER.value in state.completed_agents:
-                    step.observation = f"Task already interpreted: {state.task_description}"
-                    state.next_agent = None
+        try:
+            action = step.action
+            action_name = (AgentEnum(a.upper()).name if (a := action[0]) and isinstance(a, str) else None)
+            request = action[1]
+            if action_name != None:
+                if action_name == AgentEnum.INTERPRETER.name:
+                    if state.task_description and AgentEnum.INTERPRETER.value in state.completed_agents:
+                        step.observation = f"Task already interpreted: {state.task_description}"
+                        state.next_agent = None
+                    else:
+                        state.interpret_content = request
+                        step.observation = None
+                        state.next_agent = AgentEnum.INTERPRETER.value
+                elif action_name == AgentEnum.USER_ANALYST.name:
+                    if state.analysis_data and AgentEnum.USER_ANALYST.value in state.completed_agents:
+                        step.observation = f"User analysis already available: {state.analysis_data}"
+                        state.next_agent = None
+                    else:
+                        state.next_agent = AgentEnum.USER_ANALYST.value
+                        step.observation = None
+                elif action_name == AgentEnum.SEARCH.name:
+                    if hasattr(state, 'reflection_feedback') and not state.is_final:
+                        state.post_rejection_search_completed = False
+                    if state.search_results and AgentEnum.SEARCH.value in state.completed_agents and state.run_count == 0:
+                        step.observation = f"Search already completed. Results available: {len(state.search_results) if isinstance(state.search_results, list) else 'Available'} items found"
+                        state.next_agent = None
+                    else:
+                        state.search_query = request
+                        state.next_agent = AgentEnum.SEARCH.value
+                        step.observation = None
+                elif action_name == AgentEnum.ITEM_ANALYST.name:
+                    if state.item_analysis and AgentEnum.ITEM_ANALYST.value in state.completed_agents and state.run_count == 0:
+                        step.observation = f"Search Results already analyzed"
+                        state.next_agent = None
+                    else:
+                        state.next_agent = AgentEnum.ITEM_ANALYST.value
+                        step.observation = None
+                elif action_name == AgentEnum.REFLECTOR.name:
+                    if state.reflection_feedback and AgentEnum.REFLECTOR.value in state.completed_agents and state.run_count == 0:
+                        step.observation = f"Reflector already completed. Results available: {state.reflection_feedback}"
+                        state.next_agent = None
+                    else:
+                        state.reflector_query = request
+                        state.next_agent = AgentEnum.REFLECTOR.value
+                        step.observation = None
+                elif action_name == AgentEnum.FINISH.name:
+                    if not state.is_final:
+                        step.observation = "Cannot finalize. Reflector did not accept the recommendation yet."
+                        state.next_agent = None
+                    else:
+                        state.candidate_answer = request
+                        state.next_agent = None
+                        step.observation = f"Task finished with answer: {request}"
                 else:
-                    state.interpret_content = request
-                    step.observation = None
-                    state.next_agent = AgentEnum.INTERPRETER.value
-            elif action_name == AgentEnum.USER_ANALYST.name:
-                if state.analysis_data and AgentEnum.USER_ANALYST.value in state.completed_agents:
-                    step.observation = f"User analysis already available: {state.analysis_data}"
+                    step.observation = f"Unknown action: {action}"
                     state.next_agent = None
-                else:
-                    state.next_agent = AgentEnum.USER_ANALYST.value
-                    step.observation = None
-            elif action_name == AgentEnum.SEARCH.name:
-                if hasattr(state, 'reflection_feedback') and not state.is_final:
-                    state.post_rejection_search_completed = False
-                if state.search_results and AgentEnum.SEARCH.value in state.completed_agents and state.run_count == 0:
-                    step.observation = f"Search already completed. Results available: {len(state.search_results) if isinstance(state.search_results, list) else 'Available'} items found"
-                    state.next_agent = None
-                else:
-                    state.search_query = request
-                    state.next_agent = AgentEnum.SEARCH.value
-                    step.observation = None
-            elif action_name == AgentEnum.ITEM_ANALYST.name:
-                if state.item_analysis and AgentEnum.ITEM_ANALYST.value in state.completed_agents and state.run_count == 0:
-                    step.observation = f"Search Results already analyzed"
-                    state.next_agent = None
-                else:
-                    state.next_agent = AgentEnum.ITEM_ANALYST.value
-                    step.observation = None
-            elif action_name == AgentEnum.REFLECTOR.name:
-                if state.reflection_feedback and AgentEnum.REFLECTOR.value in state.completed_agents and state.run_count == 0:
-                    step.observation = f"Reflector already completed. Results available: {state.reflection_feedback}"
-                    state.next_agent = None
-                else:
-                    state.reflector_query = request
-                    state.next_agent = AgentEnum.REFLECTOR.value
-                    step.observation = None
-            elif action_name == AgentEnum.FINISH.name:
-                if not state.is_final:
-                    step.observation = "Cannot finalize. Reflector did not accept the recommendation yet."
-                    state.next_agent = None
-                else:
-                    state.candidate_answer = request
-                    state.next_agent = None
-                    step.observation = f"Task finished with answer: {request}"
-            else:
-                step.observation = f"Unknown action: {action}"
-                state.next_agent = None
+        except Exception as e:
+            print(e)
 
     
 

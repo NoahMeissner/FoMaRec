@@ -13,6 +13,7 @@ import json
 from typing import Set
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
+from foodrec.config.structure.paths import CONVERSATION
 
 
 class TaskInterpreterAgent(Agent):    
@@ -49,6 +50,7 @@ class TaskInterpreterAgent(Agent):
              result = self._parse_llm_response(llm_response)
              record(AgentReporter.INTERPRETER_Output.name, result)
         except Exception as e:
+            result = state.query
             print(f"❗️ Interpreter ERROR: {e}")
         
         state.task_description = result

@@ -13,17 +13,6 @@ from foodrec.config.structure.dataset_enum import DatasetEnum
 # Import the IngredientNormalisation class from the first file
 from foodrec.tools.ingredient_normalizer import IngredientNormalisation
 
-def create_ngram_index(terms, n=3):
-    """Create n-gram index for fast fuzzy matching"""
-    ngram_index = defaultdict(set)
-    
-    for i, term in enumerate(terms):
-        # Character n-grams
-        for j in range(len(term) - n + 1):
-            ngram = term[j:j+n]
-            ngram_index[ngram].add(i)
-    
-    return ngram_index
 
 
 class TestCaseGenerator:
@@ -34,35 +23,6 @@ class TestCaseGenerator:
         self.embeddings = embeddings
         self.test_cases = []
         
-    def introduce_typo(self, word: str) -> str:
-        """Introduce character swap typo"""
-        if len(word) < 4:
-            return word
-        i = random.randint(0, len(word) - 2)
-        return word[:i] + word[i+1] + word[i] + word[i+2:]
-    
-    def drop_random_char(self, word: str) -> str:
-        """Drop a random character"""
-        if len(word) < 4:
-            return word
-        i = random.randint(0, len(word) - 1)
-        return word[:i] + word[i+1:]
-    
-    def add_random_char(self, word: str) -> str:
-        """Add a random character"""
-        if len(word) < 3:
-            return word
-        chars = 'abcdefghijklmnopqrstuvwxyz'
-        i = random.randint(0, len(word))
-        return word[:i] + random.choice(chars) + word[i:]
-    
-    def substitute_char(self, word: str) -> str:
-        """Substitute a random character"""
-        if len(word) < 3:
-            return word
-        chars = 'abcdefghijklmnopqrstuvwxyz'
-        i = random.randint(0, len(word) - 1)
-        return word[:i] + random.choice(chars) + word[i+1:]
         
     def generate_test_cases_for_term(self, term: str, n_per_type: int = 2) -> List[Tuple[str, str, str]]:
         """Generate multiple test cases for a single term"""
@@ -393,3 +353,11 @@ def run_comprehensive_evaluation(sample_size: int = None,
     # Print results
     evaluator.print_evaluation_summary(results)
     evaluator.analyze_failure_patterns(results)
+
+"""
+#from foodrec.evaluation.ingredient_normalisation import run_comprehensive_evaluation
+
+# run_comprehensive_evaluation(sample_percentage=0.2, use_stratified=False)
+
+
+"""
