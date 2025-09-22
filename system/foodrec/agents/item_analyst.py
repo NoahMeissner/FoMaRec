@@ -4,36 +4,33 @@
 Agent responsible for analysis of recipes
 """
 
-from foodrec.agents.agent import Agent
 from typing import Set
-from foodrec.agents.agent_state import AgentState
 import json
-from foodrec.agents.agent import Agent
-from typing import Set
 from foodrec.agents.agent_state import AgentState
+from foodrec.agents.agent import Agent
 from foodrec.utils.multi_agent.get_model import get_model
 from foodrec.config.prompts.load_prompt import get_prompt, PromptEnum
 from foodrec.utils.multi_agent.output import output_item_analyst
-from foodrec.agents.agent_names import AgentEnum
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
 from foodrec.evaluation.is_ketogen import is_ketogenic
 
 
 class ItemAnalystAgent(Agent):
-    """Agent zur Analyse von Item Informationen"""
-    
+    """Agent responsible for analyzing search results and providing item analysis."""
+
     def __init__(self):
         self.no_response = False
         super().__init__(AgentEnum.ITEM_ANALYST.value)
-    
+
     def _define_requirements(self) -> Set[str]:
         return {"search_results"}
-    
+
     def _define_provides(self) -> Set[str]:
         return {"item_analysis"}
-    
+
     def filter_search(self, search_results):
+        """Filter search results to remove duplicates and add ketogenic info."""
         seen, out = set(), []
         for o in search_results:
             t = (o.get('title') or "").strip().casefold()
@@ -49,7 +46,6 @@ class ItemAnalystAgent(Agent):
             o['is_ketogenic'] = ketogen
         return out
 
-    
     def _create_prompt(self, state:AgentState) -> str:
         prompt = get_prompt(PromptEnum.ITEM_ANALYST, state.biase)
         analysis_data = state.analysis_data
@@ -61,7 +57,7 @@ class ItemAnalystAgent(Agent):
         prompt = prompt.replace("$task_description$",str(task_description))
         record(AgentReporter.ITEM_ANALYST_Prompt.name, prompt)
         return prompt
-    
+
     def _parse_llm_response(self, response: str) -> dict:
 
         json_start = response.find('{')
@@ -70,12 +66,12 @@ class ItemAnalystAgent(Agent):
             print(f"❗️ ITEM ANALYST ERROR: Invalid response format: {response}")
             self.no_response = True
             return response
-        
+
         json_str = response[json_start:json_end]
         try:
             parsed = json.loads(json_str)
-        except json.JSONDecodeError as e:
-            print(f"❗️ ITEM ANALYST ERROR: Invalid response format: {response}")
+        except json.JSONDecodeError as exception:
+            print(f"❗️ ITEM ANALYST ERROR: Invalid response format: {response} {exception}")
             self.no_response = True
             return json_str
 
@@ -104,7 +100,6 @@ class ItemAnalystAgent(Agent):
             "explanations": explanation_list
         }
 
-    
     def _execute_logic(self, state: AgentState) -> AgentState:
         self.no_response = False
         prompt = self._create_prompt(state)
@@ -122,11 +117,9 @@ class ItemAnalystAgent(Agent):
                 state.messages = state.get("messages", []) + [
                     (self.name, f"Analysis complete - {llm_response}")
                 ]
-            except Exception as e:
-                print(e)
+            except Exception as exception: # pylint: disable=broad-exception-caught
+                print(exception)
                 print(llm_response)
-        except Exception as e:
-            print(f"❗️ ITEM ANALYST ERROR: {e}")
+        except Exception as exception: # pylint: disable=broad-exception-caught
+            print(f"❗️ ITEM ANALYST ERROR: {exception}")
         return state
-    
-        

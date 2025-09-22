@@ -7,7 +7,10 @@ We have three phases:
 - Second Action Process
 - Third Observation process
 '''
-
+import re
+import json
+from typing import Optional, Set
+from dataclasses import dataclass
 from foodrec.agents.agent import Agent
 from foodrec.agents.agent_state import AgentState
 from foodrec.agents.interpreter import TaskInterpreterAgent
@@ -15,17 +18,9 @@ from foodrec.agents.user_analyst import UserItemAnalystAgent
 from foodrec.agents.item_analyst import ItemAnalystAgent
 from foodrec.agents.search_agent import SearcherAgent
 from foodrec.agents.reflector_agent import ReflectorAgent
-from foodrec.config.prompts.load_prompt import PromptEnum, get_prompt
 from foodrec.utils.multi_agent.get_model import get_model
 from foodrec.utils.multi_agent.output import output_manager
-from typing import List, Optional, Set
-from dataclasses import dataclass
-from foodrec.utils.multi_agent.create_multi_agent_prompt import _build_available_data_summary, _build_completion_status, _build_reflections, _build_task_prompt
-import re
-import time 
 from foodrec.tools.conversation_manager import record
-import json
-from foodrec.config.structure.paths import CONVERSATION
 from foodrec.utils.multi_agent.build_prompt import build_prompt_thought, build_prompt_action
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 
@@ -39,7 +34,7 @@ class ManagerStep:
     is_final: bool = False
 
 class ManagerAgent(Agent):
-
+    """Agent that manages the workflow of other agents using LLM-based reasoning."""
     def __init__(self):
         super().__init__(AgentEnum.MANAGER.value)
         self.available_agents = {
@@ -53,20 +48,23 @@ class ManagerAgent(Agent):
 
     def _define_requirements(self) -> Set[str]:
         return set()
-    
+
     def _define_provides(self) -> Set[str]:
         return {"next_agent", "candidate_answer", "manager_steps", "scratchpad"}
-        
+
     def call_thought(self, state):
+        """Calls the LLM to generate a thought based on the current state."""
         try:
             model = get_model(state.model)
             prompt = build_prompt_thought(state)
             record(AgentReporter.MANAGER_Thought_Prompt.name, prompt)
             return model.__call__(prompt)
-        except Exception as e:
-            print(e)
+        except Exception as exception: #pylint: disable=broad-except
+            print(exception)
+            return "Thought: Error generating thought. Action: Finish[Error]"
 
     def call_action(self, state, thought):
+        """Calls the LLM to decide on an action based on the current thought."""
         model = get_model(state.model)
         prompt = build_prompt_action(state, thought)
         record(AgentReporter.MANAGER_Action_Prompt.name, prompt)
@@ -83,24 +81,26 @@ class ManagerAgent(Agent):
         for key, value in defaults.items():
             setattr(state, key, getattr(state, key, value))
 
-    
     def _parse_llm_output(self, model_output: str, step_number: int) -> ManagerStep:
         """Parse the LLM output to extract Thought, Action, and potentially Observation"""
         model_output = model_output.replace("*","")
         thought_match = re.search(r"Thought:\s*(.*?)(?=Action:|$)", model_output, re.DOTALL)
         thought = thought_match.group(1).strip() if thought_match else "No thought provided"
-        action_match = re.search(r"Action:\s*(.*?)(?=Observation:|Thought:|$)", model_output, re.DOTALL)
+        action_match = re.search(r"Action:\s*(.*?)(?=Observation:|Thought:|$)",
+                                model_output,
+                                re.DOTALL)
         action = action_match.group(1).strip() if action_match else "No action provided"
         is_final = action.startswith("Finish[")
-        
+
         return ManagerStep(
             step_number=step_number,
             thought=thought,
             action=action,
             is_final=is_final
         )
-    
+
     def convert_str_json(self, response: str) -> json:
+        """Convert a string that contains JSON into a JSON object."""
         try:
             response = response.replace("*", "")
             json_start = response.find('{')
@@ -110,16 +110,13 @@ class ManagerAgent(Agent):
                 json_str = response[json_start:json_end]
                 result = json.loads(json_str)
                 return result
-        except:
-            print("#"*20 + "Error" + 20*"#")
-            print(response)
+        except Exception as exception: # pylint: disable=broad-exception-caught
+            print(f"❗️ JSON parsing failed: {exception}")
+        if response.find('{') != -1:
+            if response.find('}') == -1:
+                return self.convert_str_json(response=response + '}')
+        return response
 
-            # find() gibt int zurück → prüfe auf -1 statt direkt auf truthy
-            if response.find('{') != -1:
-                if response.find('}') == -1:
-                    return self.convert_str_json(response=response + '}')
-            return response
-    
     def _parse_thought_output(self, model_output: str) -> str:
         try:
             structured_ouput = self.convert_str_json(model_output)
@@ -127,84 +124,119 @@ class ManagerAgent(Agent):
             if result is None:
                 return model_output
             return result
-        except:
+        except Exception as exception: # pylint: disable=broad-exception-caught
+            print(f"❗️ Thought parsing failed: {exception}")
             print(model_output)
             return model_output
-    
+
     def _parse_action_output(self, model_output: str) -> str:
         structured_ouput = self.convert_str_json(model_output)
         agent_name = structured_ouput.get("Agent", None)
         reqeust = structured_ouput.get("Request", None)
-        if agent_name == None:
+        if agent_name is None:
             print(model_output)
             print("error")
         return [agent_name, reqeust]
-    
-    
-    def _execute_action(self, state: AgentState, step: ManagerStep):
-        try:
-            action = step.action
-            action_name = (AgentEnum(a.upper()).name if (a := action[0]) and isinstance(a, str) else None)
-            request = action[1]
-            if action_name != None:
-                if action_name == AgentEnum.INTERPRETER.name:
-                    if state.task_description and AgentEnum.INTERPRETER.value in state.completed_agents:
-                        step.observation = f"Task already interpreted: {state.task_description}"
-                        state.next_agent = None
-                    else:
-                        state.interpret_content = request
-                        step.observation = None
-                        state.next_agent = AgentEnum.INTERPRETER.value
-                elif action_name == AgentEnum.USER_ANALYST.name:
-                    if state.analysis_data and AgentEnum.USER_ANALYST.value in state.completed_agents:
-                        step.observation = f"User analysis already available: {state.analysis_data}"
-                        state.next_agent = None
-                    else:
-                        state.next_agent = AgentEnum.USER_ANALYST.value
-                        step.observation = None
-                elif action_name == AgentEnum.SEARCH.name:
-                    if hasattr(state, 'reflection_feedback') and not state.is_final:
-                        state.post_rejection_search_completed = False
-                    if state.search_results and AgentEnum.SEARCH.value in state.completed_agents and state.run_count == 0:
-                        step.observation = f"Search already completed. Results available: {len(state.search_results) if isinstance(state.search_results, list) else 'Available'} items found"
-                        state.next_agent = None
-                    else:
-                        state.search_query = request
-                        state.next_agent = AgentEnum.SEARCH.value
-                        step.observation = None
-                elif action_name == AgentEnum.ITEM_ANALYST.name:
-                    if state.item_analysis and AgentEnum.ITEM_ANALYST.value in state.completed_agents and state.run_count == 0:
-                        step.observation = f"Search Results already analyzed"
-                        state.next_agent = None
-                    else:
-                        state.next_agent = AgentEnum.ITEM_ANALYST.value
-                        step.observation = None
-                elif action_name == AgentEnum.REFLECTOR.name:
-                    if state.reflection_feedback and AgentEnum.REFLECTOR.value in state.completed_agents and state.run_count == 0:
-                        step.observation = f"Reflector already completed. Results available: {state.reflection_feedback}"
-                        state.next_agent = None
-                    else:
-                        state.reflector_query = request
-                        state.next_agent = AgentEnum.REFLECTOR.value
-                        step.observation = None
-                elif action_name == AgentEnum.FINISH.name:
-                    if not state.is_final:
-                        step.observation = "Cannot finalize. Reflector did not accept the recommendation yet."
-                        state.next_agent = None
-                    else:
-                        state.candidate_answer = request
-                        state.next_agent = None
-                        step.observation = f"Task finished with answer: {request}"
-                else:
-                    step.observation = f"Unknown action: {action}"
-                    state.next_agent = None
-        except Exception as e:
-            print(e)
 
-    
+    def _execute_action(self, state: AgentState, step: ManagerStep):
+        def set_step(observation=None, next_agent=None):
+            step.observation = observation
+            state.next_agent = next_agent
+
+        def get_action_name(action):
+            if not action or not isinstance(action, (list, tuple)) or not action[0]:
+                return None, None
+            act = action[0]
+            request_ = action[1] if len(action) > 1 else None
+            try:
+                return AgentEnum(str(act).upper()).name, request_
+            except Exception:
+                return None, request_
+
+        def already_done(attr_name: str, agent_enum: AgentEnum) -> bool:
+            return (getattr(state, attr_name, None)
+                    and agent_enum.value in state.completed_agents
+                    and getattr(state, "run_count", 0) == 0)
+
+        action = step.action
+        action_name, request = get_action_name(action)
+
+        try:
+            if action_name is None:
+                set_step(f"Unknown action: {action}", None)
+                return
+
+            # --- Handlers ---
+            def handle_interpreter():
+                if state.task_description and AgentEnum.INTERPRETER.value in state.completed_agents:
+                    set_step(f"Task already interpreted: {state.task_description}", None)
+                else:
+                    state.interpret_content = request
+                    set_step(None, AgentEnum.INTERPRETER.value)
+
+            def handle_user_analyst():
+                if state.analysis_data and AgentEnum.USER_ANALYST.value in state.completed_agents:
+                    set_step(f"User analysis already available: {state.analysis_data}", None)
+                else:
+                    set_step(None, AgentEnum.USER_ANALYST.value)
+
+            def handle_search():
+                if hasattr(state, "reflection_feedback") and not getattr(state, "is_final", False):
+                    state.post_rejection_search_completed = False
+                if already_done("search_results", AgentEnum.SEARCH):
+                    count = (len(state.search_results)
+                            if isinstance(state.search_results, list)
+                            else "Available")
+                    set_step(f"""Search already completed.
+                             Results available: {count} items found""", None)
+                else:
+                    state.search_query = request
+                    set_step(None, AgentEnum.SEARCH.value)
+
+            def handle_item_analyst():
+                if already_done("item_analysis", AgentEnum.ITEM_ANALYST):
+                    set_step("Search Results already analyzed", None)
+                else:
+                    set_step(None, AgentEnum.ITEM_ANALYST.value)
+
+            def handle_reflector():
+                if already_done("reflection_feedback", AgentEnum.REFLECTOR):
+                    set_step(f"""Reflector already completed.
+                             \nResults available: {state.reflection_feedback}\n""", None)
+                else:
+                    state.reflector_query = request
+                    set_step(None, AgentEnum.REFLECTOR.value)
+
+            def handle_finish():
+                if not getattr(state, "is_final", False):
+                    set_step("Cannot finalize. \nReflector did not accept the recommendation yet.", None)
+                else:
+                    state.candidate_answer = request
+                    set_step(f"Task finished with answer: {request}", None)
+
+            # --- Dispatch table ---
+            handlers = {
+                AgentEnum.INTERPRETER.name: handle_interpreter,
+                AgentEnum.USER_ANALYST.name: handle_user_analyst,
+                AgentEnum.SEARCH.name: handle_search,
+                AgentEnum.ITEM_ANALYST.name: handle_item_analyst,
+                AgentEnum.REFLECTOR.name: handle_reflector,
+                AgentEnum.FINISH.name: handle_finish,
+            }
+
+            handler = handlers.get(action_name)
+            if handler is None:
+                set_step(f"Unknown action: {action}", None)
+                return
+
+            handler()
+
+        except Exception as exception:  # pylint: disable=broad-except
+            print(exception)
+
 
     def _execute_logic(self, state: AgentState) -> AgentState:
-        self._current_state = state        
+        self._current_state = state
         self._initialize_state(state)
 
         # If we have more than 4 revisions call fallback answer
@@ -231,5 +263,9 @@ class ManagerAgent(Agent):
         )
         state.manager_steps.append(step)
         self._execute_action(state, step)
-        output_manager(thought=step.thought,obersvation=step.observation, action=step.action,routing=state.next_agent, isfinal=state.is_final)
+        output_manager(thought=step.thought,
+                    obersvation=step.observation,
+                    action=step.action,
+                    routing=state.next_agent,
+                    isfinal=state.is_final)
         return state

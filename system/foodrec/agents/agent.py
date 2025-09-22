@@ -6,31 +6,30 @@ from foodrec.agents.agent_state import AgentState
 
 
 class Agent(ABC):
-    """Abstrakte Basis-Klasse für alle Agents"""
-    
+    """Basisclass for all agents in the system"""
     def __init__(self, name: str):
         self.name = name
         self.requirements = self._define_requirements()
         self.provides = self._define_provides()
-    
+
     @abstractmethod
     def _define_requirements(self) -> Set[str]:
-        """Definiert welche Daten dieser Agent benötigt"""
+        """Define the requirements for the agent."""
         pass
-    
+
     @abstractmethod
     def _define_provides(self) -> Set[str]:
-        """Definiert welche Daten dieser Agent bereitstellt"""
+        """Define what the agent provides."""
         pass
-    
+
     @abstractmethod
     def _execute_logic(self, state: AgentState) -> AgentState:
-        """Führt die spezifische Logik des Agents aus"""
+        """Execute the agent-specific logic."""
         pass
-    
+
     def can_execute(self, state: AgentState) -> bool:
+        """Check if the agent can execute based on the current state."""
         state_dict = state.to_dict()
-        """Prüft ob alle Requirements erfüllt sind"""
         for requirement in self.requirements:
             if requirement == "task_description":
                 if not state_dict.get("task_description"):
@@ -45,12 +44,11 @@ class Agent(ABC):
                 if not state_dict.get("candidate_answer"):
                     return False
         return True
-    
+
     def execute(self, state: AgentState) -> AgentState:
-        """Führt den Agent aus und markiert ihn als completed"""
+        """Main method to execute the agent's logic if requirements are met."""
         print(f"{self.name} processing task {state.task_id}")
-        
-        # Prüfe Requirements
+
         if not self.can_execute(state):
             print(60*'===')
             print(state)
@@ -58,13 +56,13 @@ class Agent(ABC):
             missing = [req for req in self.requirements if not self._has_requirement(state, req)]
             print(f"⚠️  {self.name} cannot execute. Missing: {missing}")
             return state
-        
+
         # Führe Agent-spezifische Logik aus
-        state = self._execute_logic(state)        
+        state = self._execute_logic(state)
         return state
-    
+
     def _has_requirement(self, state: AgentState, requirement: str) -> bool:
-        """Hilfsmethode um zu prüfen ob ein Requirement erfüllt ist"""
+        """Check if a specific requirement is met in the state."""
         if requirement == "conversation_history":
             return bool(state.get("conversation_history"))
         elif requirement == "task_description":
