@@ -4,33 +4,30 @@
 Agent responsible for the analysis of the users
 """
 
-from foodrec.tools.info_database import InformationDataBase
-from foodrec.agents.agent import Agent
 from typing import  Set
 import json
+from foodrec.agents.agent import Agent
 from foodrec.agents.agent_state import AgentState
 from foodrec.tools.info_database import InformationDataBase
 from foodrec.utils.multi_agent.output import output_user_analyst
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
-from foodrec.config.structure.paths import CONVERSATION
 
 class UserItemAnalystAgent(Agent):
-    """Agent zur Analyse von User Informationen"""
-    
+    """Agent responsible for analyzing user information."""    
     def __init__(self):
         super().__init__(AgentEnum.USER_ANALYST.value)
         self.info_database = InformationDataBase()
-    
+
     def _define_requirements(self) -> Set[str]:
         return {}
-    
+
     def _define_provides(self) -> Set[str]:
         return {"analysis_data"}
-    
+
     def _execute_logic(self, state: AgentState) -> AgentState:
-        id = state.user_id
-        insights = self.info_database.query(id)
+        user_id = state.user_id
+        insights = self.info_database.query(user_id)
         state.analysis_data = str(json.loads(insights.to_json(orient="records"))[0])
 
         state.messages = state.get("messages", []) + [

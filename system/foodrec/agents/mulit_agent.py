@@ -3,11 +3,9 @@
 """
     This script implements the system
 """
-
-import time
+from langgraph.graph import StateGraph, END
 from foodrec.agents.agent import Agent
 from foodrec.agents.agent_state import AgentState
-from langgraph.graph import StateGraph, END
 from foodrec.agents.interpreter import TaskInterpreterAgent
 from foodrec.agents.user_analyst import UserItemAnalystAgent
 from foodrec.agents.search_agent import SearcherAgent
@@ -15,10 +13,8 @@ from foodrec.agents.reflector_agent import ReflectorAgent
 from foodrec.agents.item_analyst import ItemAnalystAgent
 from foodrec.agents.manager import ManagerAgent
 from foodrec.config.structure.dataset_enum import ModelEnum
-from dataclasses import asdict
 from foodrec.agents.agent_names import AgentEnum
 from foodrec.utils.multi_agent.swap_recipe_list import get_list
-from foodrec.tools.conversation_manager import record
 
 def create_agent_node(agent: Agent):
     """Standard agent node without completion tracking"""
@@ -32,13 +28,11 @@ def create_agent_node_with_completion_tracking(agent: Agent, agent_name: str):
     """Create agent node that tracks completion"""
     def agent_node(state: dict) -> dict:
         agent_state = AgentState.from_dict(state)
-                
-        # Execute the agent
+
         updated_state = agent.execute(agent_state)
         agent_name_lower = agent_name.lower()
 
         completed_agents = {agent.lower() for agent in (updated_state.completed_agents or [])}
-        # Mark this agent as completed if it produced results
         if agent_name == AgentEnum.INTERPRETER.value and updated_state.task_description:
             completed_agents.add(agent_name_lower)
             updated_state.last_completed_agent = AgentEnum.INTERPRETER.value
@@ -56,7 +50,6 @@ def create_agent_node_with_completion_tracking(agent: Agent, agent_name: str):
             updated_state.last_completed_agent = AgentEnum.REFLECTOR.value
         else:
             print(f"⚠️  {agent_name} did not produce expected results - not marked as completed")
-        
         updated_state.completed_agents = completed_agents
         return updated_state.to_dict()
     return agent_node
@@ -65,19 +58,19 @@ def route_next_agent(state: dict) -> str:
     """Routing function based on Manager decision"""
     next_agent = state.get("next_agent")
     is_final = state.get("is_final", False)
-    
-    print(f"\n=== ROUTING ===") 
-    print(f"next_agent: {next_agent}") 
-    print(f"is_final: {is_final}") 
-    print(f"===============\n") 
-    
+
+    print("=== ROUTING ===")
+    print(f"next_agent: {next_agent}")
+    print(f"is_final: {is_final}")
+    print("===============")
+
     if is_final or next_agent is None:
         return "end"
     return next_agent
 
 def create_multi_agent_graph():
     """Creates and configures the manager-driven Multi-Agent Workflow Graph"""
-    
+
     # Initialize Agents
     manager = ManagerAgent()
     task_interpreter = TaskInterpreterAgent()
@@ -85,27 +78,37 @@ def create_multi_agent_graph():
     searcher = SearcherAgent()
     item_analyst = ItemAnalystAgent()
     reflector = ReflectorAgent()
-    
     workflow = StateGraph(AgentState)
-    
+
     # Add Nodes with Completion Tracking
-    workflow.add_node(AgentEnum.MANAGER.value, create_agent_node(manager))  # Manager doesn't need completion tracking
-    workflow.add_node(AgentEnum.INTERPRETER.value, create_agent_node_with_completion_tracking(task_interpreter, AgentEnum.INTERPRETER.value))
-    workflow.add_node(AgentEnum.USER_ANALYST.value, create_agent_node_with_completion_tracking(user_analyst, AgentEnum.USER_ANALYST.value))
-    workflow.add_node(AgentEnum.SEARCH.value, create_agent_node_with_completion_tracking(searcher, AgentEnum.SEARCH.value))
-    workflow.add_node(AgentEnum.REFLECTOR.value, create_agent_node_with_completion_tracking(reflector, AgentEnum.REFLECTOR.value))
-    workflow.add_node(AgentEnum.ITEM_ANALYST.value, create_agent_node_with_completion_tracking(item_analyst, AgentEnum.ITEM_ANALYST.value))
+    workflow.add_node(AgentEnum.MANAGER.value,
+                       create_agent_node(manager))
+    workflow.add_node(AgentEnum.INTERPRETER.value,
+                       create_agent_node_with_completion_tracking(task_interpreter,
+                                                                   AgentEnum.INTERPRETER.value))
+    workflow.add_node(AgentEnum.USER_ANALYST.value,
+                       create_agent_node_with_completion_tracking(user_analyst,
+                                                                   AgentEnum.USER_ANALYST.value))
+    workflow.add_node(AgentEnum.SEARCH.value,
+                       create_agent_node_with_completion_tracking(searcher,
+                                                                   AgentEnum.SEARCH.value))
+    workflow.add_node(AgentEnum.REFLECTOR.value,
+                       create_agent_node_with_completion_tracking(reflector,
+                                                                   AgentEnum.REFLECTOR.value))
+    workflow.add_node(AgentEnum.ITEM_ANALYST.value,
+                       create_agent_node_with_completion_tracking(item_analyst,
+                                                                   AgentEnum.ITEM_ANALYST.value))
 
     # Set Entry Point to Manager
     workflow.set_entry_point(AgentEnum.MANAGER.value)
-    
+
     # All Agents return to Manager
     workflow.add_edge(AgentEnum.INTERPRETER.value, AgentEnum.MANAGER.value)
     workflow.add_edge(AgentEnum.USER_ANALYST.value, AgentEnum.MANAGER.value)
     workflow.add_edge(AgentEnum.SEARCH.value, AgentEnum.MANAGER.value)
     workflow.add_edge(AgentEnum.REFLECTOR.value, AgentEnum.MANAGER.value)
     workflow.add_edge(AgentEnum.ITEM_ANALYST.value, AgentEnum.MANAGER.value)
-    
+
     # Manager decides which Agent to call next
     workflow.add_conditional_edges(
         AgentEnum.MANAGER.value,
@@ -119,10 +122,14 @@ def create_multi_agent_graph():
             "end": END
         }
     )
-    
+
     return workflow.compile()
 
-def create_initial_state(user_id, biase: bool = False, model: ModelEnum = ModelEnum.LLAMA, query: str = "") -> AgentState:
+def create_initial_state(user_id,
+                        biase: bool = False,
+                        model: ModelEnum = ModelEnum.Gemini,
+                        query: str = "") -> AgentState:
+    """Creates the initial state for the multi-agent workflow."""
     return AgentState(
         task_id="task_001",
         user_id=user_id,
@@ -130,13 +137,17 @@ def create_initial_state(user_id, biase: bool = False, model: ModelEnum = ModelE
         biase=biase,
         query=query,
         is_final=False,
-        completed_agents=set(),  
+        completed_agents=set(),
         required_data={}
     )
 
 class MultiAgent:
-
-    def __init__(self, user_id, biase: bool = False, model: ModelEnum = ModelEnum.Gemini, print_output: bool = False):
+    """Class to manage and run the multi-agent workflow."""
+    def __init__(self,
+                user_id,
+                biase: bool = False,
+                model: ModelEnum = ModelEnum.Gemini,
+                print_output: bool = False):
         self.app = create_multi_agent_graph()
         self.user_id = user_id
         self.biase = biase
@@ -144,15 +155,14 @@ class MultiAgent:
         self.print_output = print_output
 
     def run(self, query: str = ""):
-        initial_state = create_initial_state(user_id=self.user_id, biase=self.biase, model=self.model, query=query)
-        
+        """Runs the multi-agent workflow with the given query."""
+        initial_state = create_initial_state(user_id=self.user_id,
+                                            biase=self.biase,
+                                            model=self.model,
+                                            query=query)
+
         print(f"Starting with initial completed_agents: {initial_state.completed_agents}")
-        
         final_state = self.app.invoke(initial_state.to_dict(), config={"recursion_limit": 100})
-        print(final_state)
-        ls = get_list(final_state)
-        print(60*"=") if self.print_output else None
-        print("Recommendation") if self.print_output else None
-        print(ls) if self.print_output else None
-        print(60*"=") if self.print_output else None
-        return ls
+        final_ls = get_list(final_state)
+        return final_ls
+    
