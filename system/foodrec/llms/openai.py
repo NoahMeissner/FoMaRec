@@ -1,22 +1,21 @@
 # 13.06.2025 @Noah Meissner
 
 """
-Request OpenAI API
+Request OpenAI API via Langchain
+In this project we used following models:
+- gpt-5-mini-2025-08-07
+- o4-mini-2025-04-16
 """
-
+import os
+from dotenv import load_dotenv
 from loguru import logger
 from langchain_openai import ChatOpenAI, OpenAI
 from langchain.schema import HumanMessage
-from dotenv import load_dotenv
-import os
 from foodrec.tools.conversation_manager import record
-from foodrec.config.structure.paths import CONVERSATION
 from foodrec.config.structure.dataset_enum import ModelEnum
 from foodrec.llms.basellm import BaseLLM
 
 class AnyOpenAILLM(BaseLLM):
-    #gpt-5-mini-2025-08-07
-    #o4-mini-2025-04-16
     def __init__(self, model_name: str = 'gpt-5-mini-2025-08-07', json_mode: bool = False,test=False, *args, **kwargs):
         """Initialize the OpenAI LLM.
 
@@ -69,8 +68,8 @@ class AnyOpenAILLM(BaseLLM):
 
         if self.model_type == 'completion':
             respone =  self.model.invoke(prompt)
-            print(response.response_metadata)       # Token, Finish Reason, Model-Infos
-            print(response.additional_kwargs)       # Safety + Raw Gemini Response
+            print(response.response_metadata)       
+            print(response.additional_kwargs)    
             return respone.content.replace('\n', ' ').strip()
         else:
             response =  self.model.invoke(

@@ -10,7 +10,7 @@ from tqdm import tqdm
 import pandas as pd
 from elasticsearch import Elasticsearch
 from typing import Iterable, Mapping, Any, List, Dict, Optional
-from foodrec.search.search_ingredients import Search
+from foodrec.tools.search import Search
 from foodrec.config.structure.dataset_enum import DatasetEnum
 import json
 from uuid import uuid4
@@ -93,7 +93,7 @@ def simulate_query(query:str, persona_id: int, model, biase_agent:bool=False, bi
     if model == None:
         es = Elasticsearch("http://localhost:9200")
         search = Search(es_client=es,dataset_name=DatasetEnum.ALL_RECIPE)
-        search_output = search.search(query, biase_search)
+        search_output = search.search(query)
         return parse_search_output(search_output)
 
     query_stempt = query.replace(" ", "_").lower()

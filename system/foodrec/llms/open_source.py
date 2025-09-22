@@ -1,14 +1,18 @@
+"""
+This class is responsible to call the Models from the Göttingen AI Cloud.
+There are various models available, in this project we used:
+- llama-3.3-70b-instruct
+"""
+
+import os
 import time
 import random
 from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage
 from dotenv import load_dotenv
-import os
-from openai import InternalServerError
 from foodrec.llms.basellm import BaseLLM
 from foodrec.tools.conversation_manager import record
 from foodrec.config.structure.dataset_enum import ModelEnum
-from foodrec.config.structure.paths import CONVERSATION
 
 
 class OpenSource(BaseLLM):
@@ -22,7 +26,7 @@ class OpenSource(BaseLLM):
             openai_api_base=base_url,
             timeout=300.0,
             temperature=0,
-            max_retries=3  # Built-in retry mechanism
+            max_retries=3  
         )
         self.test = test
         self.model_record = ModelEnum.LLAMA.name
@@ -30,9 +34,8 @@ class OpenSource(BaseLLM):
     def __call__(self, prompt: str, max_retries: int = 10, *args, **kwargs) -> str:
         messages = [HumanMessage(content=str(prompt))]
         
-        # Special handling for GPT-OSS models
         if 'gpt-oss' in self.model_name.lower():
-            max_retries = min(max_retries, 3)  # Don't waste time on broken model
+            max_retries = min(max_retries, 3)  
             
         for attempt in range(max_retries):
             try:

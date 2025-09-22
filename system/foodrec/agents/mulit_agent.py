@@ -10,8 +10,8 @@ from foodrec.agents.agent_state import AgentState
 from langgraph.graph import StateGraph, END
 from foodrec.agents.interpreter import TaskInterpreterAgent
 from foodrec.agents.user_analyst import UserItemAnalystAgent
-from foodrec.agents.search import SearcherAgent
-from foodrec.agents.reflect import ReflectorAgent
+from foodrec.agents.search_agent import SearcherAgent
+from foodrec.agents.reflector_agent import ReflectorAgent
 from foodrec.agents.item_analyst import ItemAnalystAgent
 from foodrec.agents.manager import ManagerAgent
 from foodrec.config.structure.dataset_enum import ModelEnum

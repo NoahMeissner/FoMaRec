@@ -1,10 +1,10 @@
 # 13.06.2025 @Noah Meissner
-# Original MacRec
+
 """
 Base LLM how we define it
 """
-
 from abc import ABC, abstractmethod
+
 class BaseLLM(ABC):
     def __init__(self) -> None:
         self.model_name: str

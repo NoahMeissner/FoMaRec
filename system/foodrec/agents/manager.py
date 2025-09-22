@@ -13,8 +13,8 @@ from foodrec.agents.agent_state import AgentState
 from foodrec.agents.interpreter import TaskInterpreterAgent
 from foodrec.agents.user_analyst import UserItemAnalystAgent
 from foodrec.agents.item_analyst import ItemAnalystAgent
-from foodrec.agents.search import SearcherAgent
-from foodrec.agents.reflect import ReflectorAgent
+from foodrec.agents.search_agent import SearcherAgent
+from foodrec.agents.reflector_agent import ReflectorAgent
 from foodrec.config.prompts.load_prompt import PromptEnum, get_prompt
 from foodrec.utils.multi_agent.get_model import get_model
 from foodrec.utils.multi_agent.output import output_manager

@@ -11,7 +11,6 @@ import json
 from foodrec.agents.agent import Agent
 from typing import Set
 from foodrec.agents.agent_state import AgentState
-from foodrec.llms.gemini import AnyGeminiLLM
 from foodrec.utils.multi_agent.get_model import get_model
 from foodrec.config.prompts.load_prompt import get_prompt, PromptEnum
 from foodrec.utils.multi_agent.output import output_item_analyst
@@ -19,7 +18,6 @@ from foodrec.agents.agent_names import AgentEnum
 from foodrec.agents.agent_names import AgentEnum, AgentReporter
 from foodrec.tools.conversation_manager import record
 from foodrec.evaluation.is_ketogen import is_ketogenic
-from foodrec.config.structure.paths import CONVERSATION
 
 
 class ItemAnalystAgent(Agent):

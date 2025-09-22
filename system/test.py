@@ -184,9 +184,10 @@ from playsound import playsound
 
 import time
 try:
-    df = create_dataset(model=ModelEnum.LLAMA, biase_agent=False, biase_search=True, print_output=False)
+    df = create_dataset(model=ModelEnum.Gemini, biase_agent=False, biase_search=False, print_output=False)
 except Exception as e:
     for i in range(0,3):
-        playsound("alarm.mp3")
+        #playsound("alarm.mp3")
+        print("Error during dataset creation, retrying...")
     raise e
 

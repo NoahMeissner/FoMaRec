@@ -19,7 +19,6 @@ import math
 from analysis_helper.mean_rounds import calc_rounds
 from analysis_helper.query_analysis import calc_other_recommendation_parameters
 from analysis_helper.calc_routing_reward import get_reward_set, reward_average_calculation
-from analysis_helper.calc_path_length import calc_path_length
 from analysis_helper.most_common_path import most_common_path
 
 def calc_time(persona_id: int, query: str, model: ModelEnum, Path = None):

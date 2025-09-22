@@ -1,7 +1,12 @@
 # Noah Meissner  13.09.2025
-from langchain.schema import HumanMessage
-from dotenv import load_dotenv
+"""
+This file is responsible for the API request to the internal OLLAMA models
+We used:
+- llama3.1:8b-instruct-q4_K_M
+"""
+
 import requests
+from dotenv import load_dotenv
 from foodrec.llms.basellm import BaseLLM
 from foodrec.tools.conversation_manager import record
 from foodrec.config.structure.dataset_enum import ModelEnum
@@ -16,7 +21,6 @@ class Schlaubox(BaseLLM):
         self.model_record = ModelEnum.LLAMA.name
 
     def __call__(self, prompt: str, max_retries: int = 10, *args, **kwargs) -> str:
-                    
         try:
             self.client = {
                 "model": self.model_name,

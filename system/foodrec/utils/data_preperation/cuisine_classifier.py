@@ -5,7 +5,6 @@
 """
 from huggingface_hub import hf_hub_download
 import joblib
-from foodrec.config.structure.dataset_enum import DatasetEnum
 
 class CuisineClassifier:
 
@@ -22,7 +21,7 @@ class CuisineClassifier:
             try:
                 paths[name] = hf_hub_download(
                     repo_id="NoahMeissner/CuisineClassifier", 
-                    filename=f"{name}.joblib"
+                    filename=f"region_classifier/{name}.joblib"
                 )
                 print(f"✅ {name} downloaded.")
             except Exception as e:
