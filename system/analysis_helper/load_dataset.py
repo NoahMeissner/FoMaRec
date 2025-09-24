@@ -3,22 +3,28 @@
 """
 This class is responsible for the Loaind of the simulated Recommender Tasks
 """
-
 import json
-from foodrec.config.structure.dataset_enum import ModelEnum 
-from foodrec.evaluation.metrics.metrics import macro_over_queries,filter_search, micro_over_queries, accuracy, f1_score, mean_average_precision_over_queries
+from foodrec.config.structure.dataset_enum import ModelEnum
+from foodrec.evaluation.metrics.metrics import filter_search
 
-
-def check_availability(persona_id: int, query: str, model: ModelEnum, Path = None):
+def get_file_path(Path,query: str, persona_id: int, model: ModelEnum):
+    """Get the file path for a given persona_id, query, and model."""
     query_stempt = query.replace(" ", "_").lower()
     id = f"{persona_id}_{query_stempt}_{model.name}"
-    ls_search = []
-    ref = {}
+    id = id.replace("?", "").replace("\'","")
     filepath = Path / f"{id}.jsonl"
     if not filepath.exists():
         print(filepath)
-        return None, None
-    
+        return None
+    return filepath
+
+def check_availability(persona_id: int, query: str, model: ModelEnum, Path = None):
+    """Check if the search results contain recipes and 
+    return the assistant's recommendation, search results, and reflector meta."""
+    ls_search = []
+    ref = {}
+    filepath = get_file_path(Path=Path, query=query, persona_id=persona_id, model=model)
+
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             for line in f:
@@ -38,7 +44,7 @@ def check_availability(persona_id: int, query: str, model: ModelEnum, Path = Non
                         return [obj.get("content"), ls_search, ref]
                     if obj.get("role") == "Search_Results":
                         zw_res = obj.get("meta", [])
-                        if zw_res!= None and len(zw_res) > len(ls_search):
+                        if zw_res is not None and len(zw_res) > len(ls_search):
                             ls_search = zw_res
                 except Exception as e:
                     print(f"Error processing line: {line}, Error: {e}")
@@ -46,22 +52,17 @@ def check_availability(persona_id: int, query: str, model: ModelEnum, Path = Non
     except:
         print(f"Error reading file {filepath}")
         return None
-    
+
     return None
 
-
-from foodrec.config.structure.paths import CONVERSATION, DATASET_PATHS
-from foodrec.config.structure.dataset_enum import ModelEnum 
-import json
-
-
-
 def get_search_engine(Path):
+    """Get the search engine from the given path."""
     with open(Path, "r", encoding="utf-8") as f:
         data = json.load(f)
         return data, data
-    
+
 def get_dicts_set(df, model:ModelEnum, Path):
+    """Get the dictionaries for all entries in the dataframe."""
     pred = {}
     gt = {}
     ref = {}
@@ -69,7 +70,10 @@ def get_dicts_set(df, model:ModelEnum, Path):
         try:
             persona_id = row["id"]
             query = row["query"]
-            pred[query], gt[query], ref[query] = check_availability(persona_id=persona_id, query=query, model=model, Path=Path)
+            pred[query], gt[query], ref[query] = check_availability(persona_id=persona_id,
+                                                                    query=query,
+                                                                    model=model,
+                                                                    Path=Path)
         except Exception as e:
             print(query)
             print(e)

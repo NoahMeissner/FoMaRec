@@ -13,7 +13,7 @@ from typing import Optional, Set
 from dataclasses import dataclass
 from foodrec.agents.agent import Agent
 from foodrec.agents.agent_state import AgentState
-from foodrec.agents.interpreter import TaskInterpreterAgent
+from foodrec.agents.interpreter_agent import TaskInterpreterAgent
 from foodrec.agents.user_analyst import UserItemAnalystAgent
 from foodrec.agents.item_analyst import ItemAnalystAgent
 from foodrec.agents.search_agent import SearcherAgent

@@ -137,7 +137,7 @@ def get_ngram_candidates(query, ngram_index, terms, n=3, top_k=50):
 class IngredientNormalisation:
 
     def __init__(self, dataset_name):
-        EL = EmbeddingLoader(dataset_name)
+        EL = EmbeddingLoader()
         self.dataset = EL.get_embeddings()
         self.embedder = Embedder()
         self.english_terms = [value[0] for value in self.dataset]   

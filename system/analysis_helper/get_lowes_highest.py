@@ -1,15 +1,15 @@
 import json
-from foodrec.evaluation.is_ketogen import is_ketogenic, calc_keto_ratio
+from foodrec.evaluation.is_ketogen import calc_keto_ratio
 import numpy as np
-from typing import Dict, List, Any, Tuple
-from foodrec.config.structure.dataset_enum import ModelEnum 
+from typing import List
 
-def take_25_lowest_keto(query_set,paths, model_name:ModelEnum, high=False):
+def take_25_lowest_keto(query_set,paths, high=False):
+    """Take the 25 lowest or highest keto ratio from the query set"""
     def get_search_engine(queries: List[str], Path = None):
         filepath = Path
         recipes = []
         if not filepath.exists():
-            print("error")
+            print("filepath not found:", filepath)
             return 0
         try:
             with open(filepath, "r", encoding="utf-8") as f:

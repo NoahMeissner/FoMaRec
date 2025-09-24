@@ -38,11 +38,28 @@ class Search:
         self.embedder = RecipeEmbedder()
         self.es_client = es_client
 
-    def search(self, request):
+    def pretty(self, hits):
+        print(f"Found {len(hits)} hits:")
+        for hit in hits:
+            source = hit.get("_source", {})
+            title = source.get("title", "No title")
+            url = source.get("url", "No URL")
+            ingredients = source.get("ingredients", [])
+            instructions = source.get("instructions", "No instructions")
+            print(f"Title: {title}")
+            print(f"URL: {url}")
+            print("Ingredients:")
+            print(ingredients)
+            print("Instructions:")
+            print(instructions)
+            print("\n" + "="*40 + "\n")
+
+    def search(self, request, pretty_print: bool = False):
         raw_information = extract_information(request)
         information = process_information(raw_information, self.normalizer)
         print(raw_information)
         request_embedding = self.embedder.generate_request_embedding(request)
+        print("Request embedding generated")
         res = request_elastic(request_embedding=request_embedding, data=information, es_client=self.es_client)
         hits = res.get("hits", {}).get("hits", [])
         if len(hits) == 0 or hits is None:
@@ -51,8 +68,11 @@ class Search:
             information['include'] = []
             res = request_elastic(request_embedding=request_embedding, data=information, es_client=self.es_client)
             hits = res.get("hits", {}).get("hits", [])
+        if pretty_print:
+            self.pretty(hits)
         return hits
 
+    
             
 
 

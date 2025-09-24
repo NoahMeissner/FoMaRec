@@ -7,12 +7,12 @@ import json
 from foodrec.config.structure.dataset_enum import ModelEnum
 from foodrec.agents.agent_names import AgentEnum
 from foodrec.evaluation.reward_evaluation import final_episode_reward
+from analysis_helper.load_dataset import get_file_path
 
 def check_reward(persona_id: int, query: str, model: ModelEnum, path = None):
-    query_stempt = query.replace(" ", "_").lower()
-    query_id = f"{persona_id}_{query_stempt}_{model.name}"
-    filepath = path / f"{query_id}.jsonl"
-    if not filepath.exists():
+    """Check the reward of the conversation"""
+    filepath = get_file_path(Path=path, query=query, persona_id=persona_id, model=model)
+    if filepath is None:
         return None, None
     roles = [AgentEnum.USER_ANALYST.value,
              AgentEnum.SEARCH.value,
@@ -41,17 +41,18 @@ def check_reward(persona_id: int, query: str, model: ModelEnum, path = None):
                         ls_route.append(AgentEnum.SEARCH.value)
                     if obj.get("role") == "assistant":
                         ls_route.append(AgentEnum.FINISH.value)
-                except Exception as e:
-                    print(f"Error processing line: {line}, Error: {e}")
+                except Exception as exception: #pylint: disable=broad-except
+                    print(f"Error processing line: {line}, Error: {exception}")
                     continue
             return ls_route
-    except Exception as exception:
+    except Exception as exception: #pylint: disable=broad-except
         print(f"Error reading file {filepath}, {exception}")
         return None
-    
+
     return None
 
 def reward_average_calculation(reward_system):
+    """Calculate the average reward of the conversation"""
     gamma = 1
     normalize = True
 
@@ -63,14 +64,15 @@ def reward_average_calculation(reward_system):
     avg_score = sum(scores) / len(scores) if scores else 0.0
     return f"Score: {avg_score:.4f} bei gamma={gamma}, normalize={normalize}"
 
-def get_reward_set(df, model:ModelEnum, Path):
+def get_reward_set(dataframe, model:ModelEnum, path):
+    """Get the reward set for the dataframe"""
     ls_res = []
-    for index, row in df.iterrows():
+    for index, row in dataframe.iterrows():
         try:
             persona_id = row["id"]
             query = row["query"]
-            ls_res.append(check_reward(persona_id=persona_id, query=query, model=model, Path=Path))
-        except Exception as e:
+            ls_res.append(check_reward(persona_id=persona_id, query=query, model=model, path=path))
+        except Exception as exception:#pylint: disable=broad-except
             print(query)
-            print(e)
+            print(exception)
     return ls_res

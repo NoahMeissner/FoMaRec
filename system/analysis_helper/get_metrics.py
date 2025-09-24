@@ -1,11 +1,26 @@
-from foodrec.evaluation.metrics.metrics import macro_over_queries,filter_search, micro_over_queries, accuracy,plot_pr_curves, f1_score, mean_average_precision_over_queries, mean_pr_auc_over_queries, bias_conformity_rate_at_k
-from typing import Dict, List, Any, Tuple
-from foodrec.evaluation.is_ketogen import is_ketogenic, calc_keto_ratio
+"""
+Helper functions to calculate and print various metrics for predicted vs. ground truth data.
+"""
+import pandas as pd
+import numpy as np
+from typing import Dict, List, Tuple
 from analysis_helper.load_dataset import get_dicts_set, get_search_engine
-from foodrec.config.structure.dataset_enum import ModelEnum 
+from foodrec.evaluation.is_ketogen import is_ketogenic
+from foodrec.config.structure.dataset_enum import ModelEnum
+from foodrec.evaluation.metrics.metrics import (
+    macro_over_queries,
+    micro_over_queries,
+    accuracy,
+    f1_score,
+    mean_average_precision_over_queries,
+    mean_pr_auc_over_queries,
+    bias_conformity_rate_at_k,
+)
 
-def get_metrics(pred: Dict[str, List[bool]], gt: Dict[str, List[bool]], verbose: bool = True) -> Dict[str, float]:
-    # Only consider queries present in both dicts
+def get_metrics(pred: Dict[str, List[bool]],
+                gt: Dict[str, List[bool]],
+                verbose: bool = True) -> Dict[str, float]:
+    """Calculate various metrics comparing predicted and ground truth lists of boolean values."""
     common = [k for k in pred.keys() if k in gt]
 
     # Filter out None/[] before taking the first element
@@ -19,7 +34,6 @@ def get_metrics(pred: Dict[str, List[bool]], gt: Dict[str, List[bool]], verbose:
 
     # Use only common keys for length stats
     mean_length = np.mean([len(gt[q]) for q in common]) if common else float('nan')
-    median_length = np.median([len(gt[q]) for q in common]) if common else float('nan')
     mean_pr_auc = mean_pr_auc_over_queries(pred)
     conformity_at_1 = bias_conformity_rate_at_k(pred, k=1)
     conformity_at_3 = bias_conformity_rate_at_k(pred, k=3)
@@ -66,7 +80,7 @@ def check_ketogenic_biase(
     """
     Returns:
       pred_dict: keto flags for items the system selected (dict_biase)
-      gt_dict:   keto flags for items NOT selected by the system (search_gt \ dict_biase)
+      gt_dict:   keto flags for items NOT selected by the system (search_gt  dict_biase)
     """
     f_is_keto = is_ketogenic  # local binding
 
@@ -95,28 +109,38 @@ def check_ketogenic_biase(
     gt_dict   = to_keto_flags(search_gt)
     return (pred_dict, pred_dict) if not gt_dict else (pred_dict, gt_dict)
 
-import pandas as pd
-import numpy as np
 
-def calc_metrics(query_set, paths, model_name: ModelEnum, save_csv: str | None = None, ref_include = False) -> pd.DataFrame:
-    """
-    Berechnet Metriken für alle Bias-Varianten und gibt sie als DataFrame zurück.
-    Optional: Speichert die Tabelle als CSV, wenn save_csv ein Pfad ist.
-
-    Erwartet: get_metrics(pred, gt, verbose=False) -> Dict[str, float]
-    """
-    # Datenquellen laden
+def calc_metrics(query_set,
+                 paths,
+                 model_name: ModelEnum,
+                 save_csv: str | None = None,
+                 ref_include = False) -> pd.DataFrame:
+    """""Calculate and print metrics for different bias conditions."""
+    # Load Data
     dict_search_engine, dict_search_engine_search = get_search_engine(paths['PATH_SEARCH_ENGINE'])
-    dict_system_biase,  dict_system_biase_search, ref_system_biase  = get_dicts_set(df=query_set, model=model_name, Path=paths['PATH_SYSTEM_BIASE'])
-    dict_no_biase,      dict_no_biase_search, ref_no_biase      = get_dicts_set(df=query_set, model=model_name, Path=paths['PATH_NO_BIASE'])
-    dict_search_biase,  dict_search_biase_search, ref_search_biase  = get_dicts_set(query_set, model_name, paths['PATH_SEARCH_BIASE'])
-    dict_both,          dict_both_search, ref_both_biase          = get_dicts_set(query_set, model_name, paths['PATH_BOTH'])
+    (dict_system_biase,
+    dict_system_biase_search,
+    ref_system_biase)  = get_dicts_set(df=query_set,
+                                      model=model_name,
+                                      Path=paths['PATH_SYSTEM_BIASE'])
+    (dict_no_biase,
+     dict_no_biase_search,
+     ref_no_biase) = get_dicts_set(df=query_set,
+                                   model=model_name,
+                                   Path=paths['PATH_NO_BIASE'])
+    (dict_search_biase,
+     dict_search_biase_search,
+     ref_search_biase)  = get_dicts_set(query_set,
+                                        model_name,
+                                        paths['PATH_SEARCH_BIASE'])
+    (dict_both,
+     dict_both_search,
+     ref_both_biase) = get_dicts_set(query_set,
+                                     model_name,
+                                     paths['PATH_BOTH'])
 
     def reduce_to_ref(dict_res: dict, dict_search: dict, ref: dict):
-        """
-        Reduziert dict_res und dict_search auf die Keys, die in ref den Status decision=='ACCEPT' haben.
-        Gibt die gefilterten Dicts zurück. Wenn ref leer/None ist, werden die Originale zurückgegeben.
-        """
+        """Reduce the result and search dicts to only those keys accepted in the reference dict."""
         if not ref:
             return dict_res, dict_search
 
@@ -129,16 +153,22 @@ def calc_metrics(query_set, paths, model_name: ModelEnum, save_csv: str | None =
         dict_search_new = {k: dict_search[k] for k in accepted_keys if k in dict_search}
         return dict_res_new, dict_search_new
     if ref_include:
-        dict_system_biase,  dict_system_biase_search  = reduce_to_ref(dict_system_biase,  dict_system_biase_search,  ref_system_biase)
-        dict_no_biase,      dict_no_biase_search      = reduce_to_ref(dict_no_biase,      dict_no_biase_search,      ref_no_biase)
-        dict_search_biase,  dict_search_biase_search  = reduce_to_ref(dict_search_biase,  dict_search_biase_search,  ref_search_biase)
-        dict_both,          dict_both_search          = reduce_to_ref(dict_both,          dict_both_search,          ref_both_biase)
+        dict_system_biase, dict_system_biase_search  = reduce_to_ref(dict_system_biase,
+                                                                    dict_system_biase_search,
+                                                                    ref_system_biase)
+        dict_no_biase, dict_no_biase_search = reduce_to_ref(dict_no_biase,
+                                                                      dict_no_biase_search,
+                                                                      ref_no_biase)
+        dict_search_biase, dict_search_biase_search = reduce_to_ref(dict_search_biase,
+                                                                    dict_search_biase_search,
+                                                                    ref_search_biase)
+        dict_both, dict_both_search = reduce_to_ref(dict_both,
+                                                    dict_both_search,
+                                                    ref_both_biase)
 
     def flatten_dict(d):
         return [b for lst in d.values() for b in lst]
 
-
-    # Reihenfolge/Mapping der Varianten
     variants = [
         ("No Biase",      dict_no_biase,     dict_no_biase_search),
         ("System Biase",  dict_system_biase, dict_system_biase_search),
@@ -150,15 +180,13 @@ def calc_metrics(query_set, paths, model_name: ModelEnum, save_csv: str | None =
     rows = []
     for name, d_predlike, d_search in variants:
         pred, gt = check_ketogenic_biase(d_predlike, d_search)
-        m = get_metrics(pred, gt, verbose=False)  # <— nutzt deine angepasste get_metrics
+        m = get_metrics(pred, gt, verbose=False)
         m["Bias"] = name
         pr_auc_raw[name] = (flatten_dict(gt), flatten_dict(pred))
         rows.append(m)
 
-    # DataFrame bauen
     df = pd.DataFrame(rows)
 
-    # Spalten sinnvoll sortieren (falls einzelne Keys fehlen, wird ignoriert)
     preferred_cols = [
         "Bias",
         "Macro Precision", "Macro Recall", "Macro F1",
@@ -169,10 +197,12 @@ def calc_metrics(query_set, paths, model_name: ModelEnum, save_csv: str | None =
         "Bias Conformity@1", "Bias Conformity@3", "Bias Conformity@5",
         "Accuracy",
     ]
-    cols = [c for c in preferred_cols if c in df.columns] + [c for c in df.columns if c not in preferred_cols]
+    cols = (
+        [c for c in preferred_cols if c in df.columns]
+        + [c for c in df.columns if c not in preferred_cols]
+    )
     df = df[cols].set_index("Bias")
 
-    # Optional: CSV speichern
     if save_csv:
         df.to_csv(save_csv, index=True)
 

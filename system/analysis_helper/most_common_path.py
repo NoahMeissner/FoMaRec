@@ -1,33 +1,16 @@
-import pandas as pd 
-import numpy as np 
-from foodrec.config.structure.dataset_enum import ModelEnum 
-from foodrec.evaluation.create_dataset import create_dataset
-from foodrec.evaluation.is_ketogen import is_ketogenic, calc_keto_ratio
-from foodrec.config.structure.paths import CONVERSATION, DATASET_PATHS
 import json
-from foodrec.evaluation.metrics.metrics import macro_over_queries,filter_search, micro_over_queries, accuracy, f1_score, mean_average_precision_over_queries, mean_pr_auc_over_queries, bias_conformity_rate_at_k
-from foodrec.data.all_recipe import AllRecipeLoader
-from typing import Dict, List, Any, Tuple
-from collections import Counter
-from foodrec.agents.agent_names import AgentEnum
-from foodrec.tools.ingredient_normalizer import IngredientNormalisation
-from analysis_helper.load_dataset import check_availability
-from foodrec.config.structure.dataset_enum import DatasetEnum
-from foodrec.evaluation.reward_evaluation import final_episode_reward, routing_accuracy
-from datetime import datetime
-import math
-from analysis_helper.mean_rounds import calc_rounds
-from analysis_helper.query_analysis import calc_other_recommendation_parameters
-from analysis_helper.calc_routing_reward import get_reward_set, reward_average_calculation
+from foodrec.config.structure.dataset_enum import ModelEnum
+from analysis_helper.load_dataset import get_file_path
 
-def most_common_path(df, persona_id: int, query: str, model: ModelEnum, Path=None):
-    query_stempt = query.replace(" ", "_").lower()
-    allowed_roles = {"INTERPRETER_Output", "USER_ANALYST", "SEARCH_Output", "ITEM_ANALYST", "REFLECTOR"}
-    file_id = f"{persona_id}_{query_stempt}_{model.name}"
-    filepath = Path / f"{file_id}.jsonl"
-
-    if not filepath.exists():
-        return []  # always return a list
+def most_common_path(persona_id: int, query: str, model: ModelEnum, Path=None):
+    allowed_roles = ["INTERPRETER_Output",
+                     "USER_ANALYST",
+                     "SEARCH_Output",
+                     "ITEM_ANALYST",
+                     "REFLECTOR"]
+    filepath = get_file_path(Path=Path, query=query, persona_id=persona_id, model=model)
+    if filepath is None:
+        return []  
 
     routing = []
     try:
@@ -44,6 +27,6 @@ def most_common_path(df, persona_id: int, query: str, model: ModelEnum, Path=Non
                 if role in allowed_roles:
                     routing.append(str(role)[:2].upper())
     except Exception:
-        return []  # on any error, return empty list for consistency
+        return []
 
-    return routing  # list of short codes, possibly empty
+    return routing

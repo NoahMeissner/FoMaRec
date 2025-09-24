@@ -7,6 +7,7 @@ This Class is responsible for the calculation of the recipe embeddings based on 
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+import os
 tqdm.pandas()
 from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -14,8 +15,9 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 class RecipeEmbedder:
 
-    def __init__(self, model_name='multi-qa-mpnet-base-dot-v1'):
+    def __init__(self, model_name='multi-qa-mpnet-base-cos-v1'):
         self.model = SentenceTransformer(model_name)
+        #os.environ['TOKENIZERS_PARALLELISM'] = 'false'
         self.scaler = StandardScaler()
         self.minmax_scaler = MinMaxScaler()
         print("RecipeEmbedder initialised")
@@ -94,6 +96,7 @@ class RecipeEmbedder:
     
     def generate_embeddings(self, df):
         descriptions = df.progress_apply(self.create_recipe_description, axis=1).tolist()
+        print("Descriptions created")
         id_ls = df['recipe_href'].tolist()
         recipe_embs = self.model.encode(descriptions, show_progress_bar=True)
 

@@ -1,10 +1,16 @@
-from foodrec.config.structure.dataset_enum import ModelEnum 
+"""
+Helper functions to determine if ketogenic recipes are available in the search results.
+"""
 import json
 import ast
-from foodrec.evaluation.is_ketogen import is_ketogenic, calc_keto_ratio
+from foodrec.config.structure.dataset_enum import ModelEnum
+from foodrec.evaluation.is_ketogen import is_ketogenic
+from analysis_helper.load_dataset import get_file_path
 
 
 def reduce_duplicates(ls):
+    """Reduce duplicate recipes based on their
+      IDs in a list of lists of recipe dicts."""
     items = []
     res = []
     try:
@@ -12,26 +18,28 @@ def reduce_duplicates(ls):
             for recipe in recipe_ls:
                 id = recipe.get("id")
                 if id not in items:
-                    res.append(is_ketogenic(protein_g=recipe.get("proteins"),carbs_g=recipe.get("carbohydrates"), fat_g=recipe.get("fat"), calories=recipe.get("calories")))
+                    res.append(is_ketogenic(protein_g=recipe.get("proteins"),
+                                            carbs_g=recipe.get("carbohydrates"),
+                                            fat_g=recipe.get("fat"),
+                                            calories=recipe.get("calories")))
                     items.append(id)
-    except Exception as e:
+    except Exception as exception: #pylint: disable=broad-except
+        print(exception)
         return res
     return res
 
 
 def ketogen_available(persona_id: int, query: str, model: ModelEnum, Path = None):
-    query_stempt = query.replace(" ", "_").lower()
-    id = f"{persona_id}_{query_stempt}_{model.name}"
+    """Check if ketogenic recipes are available in the search results 
+    and if the assistant recommended a non-ketogenic recipe."""
     ls = []
     assistant = None
-    filepath = Path / f"{id}.jsonl"
-    if not filepath.exists():
+    file_path = get_file_path(Path=Path, query=query, persona_id=persona_id, model=model)
+    if not file_path.exists():
         return 0
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            num = 0
+        with open(file_path, "r", encoding="utf-8") as f:
             for line in f:
-                
                 line = line.strip()
                 if not line:
                     continue
@@ -44,8 +52,8 @@ def ketogen_available(persona_id: int, query: str, model: ModelEnum, Path = None
                     if type(meta) is not list and meta is not None:
                         try:
                             meta = ast.literal_eval(meta)
-                        except:
-                            print(meta)
+                        except: #pylint: disable=bare-except
+                            print(meta) 
                     if meta is not None:
                         ls.append(meta)
                 if obj.get("role") == "assistant":
@@ -53,16 +61,19 @@ def ketogen_available(persona_id: int, query: str, model: ModelEnum, Path = None
                     if type(content) is not list:
                         content = ast.literal_eval(content)
                     recipe = content[0]
-                    assistant = is_ketogenic(protein_g=recipe.get("proteins"),carbs_g=recipe.get("carbohydrates"), fat_g=recipe.get("fat"), calories=recipe.get("calories"))
+                    assistant = is_ketogenic(protein_g=recipe.get("proteins"),
+                                             carbs_g=recipe.get("carbohydrates"),
+                                             fat_g=recipe.get("fat"),
+                                             calories=recipe.get("calories"))
             ls = reduce_duplicates(ls)
-            if assistant == None or assistant == True:
+            if assistant is None or assistant is True:
                 return None
             available = True if True in ls else False
-            if assistant == False and available:
+            if assistant is False and available:
                 return True
-            else:
-                return False
+            return False
 
-    except Exception as e:
+    except Exception as exception: #pylint: disable=broad-except
+        print(exception)
         return None
     return None
