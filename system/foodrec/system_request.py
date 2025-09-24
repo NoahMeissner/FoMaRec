@@ -16,7 +16,7 @@ def run_query(prompt: str, chat_id: str = "chat-2025-08-11-noah",user_id:int = 1
     check_Elastic(biase_search=biase_search)
     with ConversationSession(chat_id, ModelEnum.Gemini):
         record("user", prompt, path=CONVERSATION / model.name)
-        M = MultiAgent(user_id=user_id,biase=biase_agents, model=model, print_output=print_output)
+        M = MultiAgent(user_id=user_id,biase=biase_agents, model=model)
         try:
             answer = M.run(prompt)
             record("assistant", answer, meta={"source": "MultiAgent", "model": str(model.name)}, path=CONVERSATION / model.name)

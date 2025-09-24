@@ -89,7 +89,7 @@ def parse_search_output( response: Iterable[Mapping[str, Any]]) -> List[Dict[str
 
         return results
 
-def simulate_query(query:str, persona_id: int, model, biase_agent:bool=False, biase_search:bool=False, print_output:bool=False):
+def simulate_query(query:str, persona_id: int, model, biase_agent:bool=False, biase_search:bool=False):
     if model == None:
         es = Elasticsearch("http://localhost:9200")
         search = Search(es_client=es,dataset_name=DatasetEnum.ALL_RECIPE)
@@ -101,25 +101,25 @@ def simulate_query(query:str, persona_id: int, model, biase_agent:bool=False, bi
     available = check_availability(id)
     if available is not None:
         return available
-    out = run_query(query, chat_id=id ,user_id=persona_id, model=model, biase_agents=biase_agent, biase_search=biase_search, print_output=print_output)
+    out = run_query(query, chat_id=id ,user_id=persona_id, model=model, biase_agents=biase_agent, biase_search=biase_search)
     return out
 
-def run_all_queries(model=ModelEnum.Gemini, biase_agent:bool=False, biase_search:bool=False, print_output:bool=False):
+def run_all_queries(model=ModelEnum.Gemini, biase_agent:bool=False, biase_search:bool=False):
     df = pd.read_csv(DATASET_PATHS / "zw_personas.csv")
     res = {}
     for index, row in tqdm(df.iterrows(), desc="Running queries", total=len(df)):
         query = row['query']
         persona_id: int = row['id']
-        res[query] = simulate_query(query, persona_id=persona_id, model=model, biase_agent=biase_agent, biase_search= biase_search, print_output=print_output)
+        res[query] = simulate_query(query, persona_id=persona_id, model=model, biase_agent=biase_agent, biase_search= biase_search)
         if index % 10 == 0:
             with open(f"{index}.json", "w", encoding="utf-8") as f:
                 json.dump(res, f, ensure_ascii=False, indent=2)
     return res
 
-def create_dataset(model, biase_agent:bool=False, biase_search:bool=False, print_output:bool=False):
+def create_dataset(model, biase_agent:bool=False, biase_search:bool=False):
     print(60* "-")
     print(f"Running Simulation with Model:{model.name if model is not None else 'None'}, Biase Agent: {biase_agent}, Biase Search: {biase_search}")
-    res = run_all_queries(model=model, biase_agent=biase_agent, biase_search= biase_search, print_output=print_output)
+    res = run_all_queries(model=model, biase_agent=biase_agent, biase_search= biase_search)
     with open("res_one.json", "w", encoding="utf-8") as f:
         json.dump(res, f, ensure_ascii=False, indent=2)
     return res

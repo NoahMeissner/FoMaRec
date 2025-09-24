@@ -21,8 +21,8 @@ from foodrec.tools.request_elastic import request_elastic
 
 
 def process_information(information, normalizer: IngredientNormalisation):
-    ingredients_avoid = [normalizer.normalize(obj, top_k=5)[0] for obj in information['ingredients_avoid']]
-    ingredients_inclued = [normalizer.normalize(obj, top_k=5)[0] for obj in information['ingredients_included']]
+    ingredients_avoid = [normalizer.normalize(obj)[0] for obj in information['ingredients_avoid']]
+    ingredients_inclued = [normalizer.normalize(obj)[0] for obj in information['ingredients_included']]
     time = information['time']
     cuisine = information['cuisine']
     calories = information['calories']
@@ -34,7 +34,7 @@ def process_information(information, normalizer: IngredientNormalisation):
 class Search:
 
     def __init__(self, es_client, dataset_name):
-        self.normalizer = IngredientNormalisation(dataset_name)
+        self.normalizer = IngredientNormalisation()
         self.embedder = RecipeEmbedder()
         self.es_client = es_client
 

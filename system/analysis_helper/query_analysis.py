@@ -72,7 +72,7 @@ def calc_other_recommendation_parameters(query_set, Path, model, n=1, Search_eng
         else:
             annotate = pd.read_csv(path_gt)
 
-        normalizer = IngredientNormalisation(DatasetEnum.ALL_RECIPE)
+        normalizer = IngredientNormalisation()
         dataset = annotate[["Gemini"]].copy()
         dataset["Gemini"] = dataset["Gemini"].apply(
             lambda x: ast.literal_eval(x) if isinstance(x, str) else x)

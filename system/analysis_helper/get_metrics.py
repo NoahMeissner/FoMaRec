@@ -7,7 +7,7 @@ from typing import Dict, List, Tuple
 from analysis_helper.load_dataset import get_dicts_set, get_search_engine
 from foodrec.evaluation.is_ketogen import is_ketogenic
 from foodrec.config.structure.dataset_enum import ModelEnum
-from foodrec.evaluation.metrics.metrics import (
+from analysis_helper.metrics import (
     macro_over_queries,
     micro_over_queries,
     accuracy,

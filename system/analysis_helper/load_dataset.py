@@ -5,7 +5,7 @@ This class is responsible for the Loaind of the simulated Recommender Tasks
 """
 import json
 from foodrec.config.structure.dataset_enum import ModelEnum
-from foodrec.evaluation.metrics.metrics import filter_search
+from analysis_helper.metrics import filter_search
 
 def get_file_path(Path,query: str, persona_id: int, model: ModelEnum):
     """Get the file path for a given persona_id, query, and model."""

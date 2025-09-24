@@ -146,13 +146,11 @@ class MultiAgent:
     def __init__(self,
                 user_id,
                 biase: bool = False,
-                model: ModelEnum = ModelEnum.Gemini,
-                print_output: bool = False):
+                model: ModelEnum = ModelEnum.Gemini):
         self.app = create_multi_agent_graph()
         self.user_id = user_id
         self.biase = biase
         self.model = model
-        self.print_output = print_output
 
     def run(self, query: str = ""):
         """Runs the multi-agent workflow with the given query."""

@@ -19,7 +19,7 @@ class BaseLLM(ABC):
         Returns:
             `int`: The limit of tokens that can be fed into the LLM under the current context length.
         """
-        return self.max_context_length - 2 * self.max_tokens - 50  # single round need 2 agent prompt steps: thought and action
+        return self.max_context_length - 2 * self.max_tokens - 50
 
     @abstractmethod
     def __call__(self, prompt: str, *args, **kwargs) -> str:

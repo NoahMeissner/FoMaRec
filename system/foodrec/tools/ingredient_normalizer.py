@@ -3,22 +3,17 @@
 """
     This script is responsible for the comparison of the different ingredient_embeddings
 """
-
-from foodrec.data.load_ingredient_embeddings import EmbeddingLoader
-from foodrec.utils.data_preperation.embedder import Embedder
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
 import random
 from difflib import SequenceMatcher
 from collections import defaultdict
+from foodrec.utils.data_preperation.embedder import Embedder
+from foodrec.data.all_recipe import AllRecipeLoader
 
 
 def calculate_edit_distance_normalized(s1, s2):
     """Calculate normalized edit distance using basic implementation"""
     if not s1 or not s2:
         return 0.0
-    
-    # Simple Levenshtein distance implementation
     def levenshtein_distance(s1, s2):
         if len(s1) < len(s2):
             return levenshtein_distance(s2, s1)
@@ -36,61 +31,18 @@ def calculate_edit_distance_normalized(s1, s2):
             previous_row = current_row
         
         return previous_row[-1]
-    
     max_len = max(len(s1), len(s2))
     if max_len == 0:
         return 1.0
     return 1.0 - (levenshtein_distance(s1, s2) / max_len)
 
-
-def calculate_jaro_winkler(s1, s2):
-    """Simple Jaro-Winkler similarity implementation"""
-    if not s1 or not s2:
-        return 0.0
-    return SequenceMatcher(None, s1, s2).ratio()
-
-def fuzzy_match_score(s1, s2):
+def calc_scores(s1, s2):
     """Enhanced fuzzy matching with multiple metrics"""
     if not s1 or not s2:
         return 0.0
-    
-    # Multiple similarity metrics
     sequence_match = SequenceMatcher(None, s1, s2).ratio()
     edit_distance = calculate_edit_distance_normalized(s1, s2)
-    jaro_winkler = calculate_jaro_winkler(s1, s2)
-    
-    # Combine metrics with weights
-    combined_score = (
-        0.4 * sequence_match +
-        0.1 * edit_distance +
-        0.4 * jaro_winkler
-    )
-    
-    return [combined_score, jaro_winkler, edit_distance]
-
-def partial_match_score(query, term):
-    """Calculate partial matching score for compound words"""
-    query_words = set(query.split())
-    term_words = set(term.split())
-    
-    if not query_words or not term_words:
-        return 0.0
-    
-    # Check for exact word matches
-    exact_matches = len(query_words & term_words)
-    
-    # Check for partial word matches
-    partial_matches = 0
-    for q_word in query_words:
-        for t_word in term_words:
-            if len(q_word) > 3 and len(t_word) > 3:
-                if q_word in t_word or t_word in q_word:
-                    partial_matches += 0.5
-                elif fuzzy_match_score(q_word, t_word)[0] > 0.8:
-                    partial_matches += 0.3
-    
-    total_score = (exact_matches + partial_matches) / max(len(query_words), len(term_words))
-    return min(total_score, 1.0)
+    return [sequence_match, edit_distance]
 
 def create_ngram_index(terms, n=3):
     """Create n-gram index for fast fuzzy matching"""
@@ -133,47 +85,45 @@ def get_ngram_candidates(query, ngram_index, terms, n=3, top_k=50):
         top_candidates.extend(additional)
     return top_candidates
 
+def get_all_recipe_dataset():
+    AL = AllRecipeLoader()
+    dataset = AL.load_training_set()
+    return dataset
+
+def get_embeddings():
+        dataset = get_all_recipe_dataset()
+        english_terms = dataset
+        ls = []
+        for index in range(0, len(english_terms)):
+            ls.append([english_terms[index], english_terms[index]])  
+        return ls
 
 class IngredientNormalisation:
 
-    def __init__(self, dataset_name):
-        EL = EmbeddingLoader()
-        self.dataset = EL.get_embeddings()
+    def __init__(self):
+        self.dataset = get_embeddings()
         self.embedder = Embedder()
         self.english_terms = [value[0] for value in self.dataset]   
         self.ngram_index = create_ngram_index(self.english_terms)
 
 
-    def normalize(self, query, top_k=5, more_information = False):
+    def normalize(self, query, more_information = False):
         """Advanced hybrid search with multiple strategies"""
         query_normalized = self.embedder.advanced_normalize(query)
         english_terms =self.english_terms
         ngram_index = self.ngram_index
-
-        
-        # Strategy 1: Exact match
         if query_normalized in english_terms:
             exact_idx = english_terms.index(query_normalized)
             return [english_terms[exact_idx], 1.0, 1.0, 1.0, 1.0]
-        
-        # Strategy 2: Get candidates using n-gram index for efficiency
         candidates = get_ngram_candidates(query_normalized, ngram_index, english_terms)
-        
-        
         results = []
         ngram_truth = english_terms[candidates[0]]
         for idx in candidates:
                 term = english_terms[idx]
-                                
-                # Calculate fuzzy similarity
-                fuzzy_score, jaro_winkler, edit_distance  = fuzzy_match_score(query_normalized, term)
-                                
-                results.append([term, jaro_winkler, ngram_truth, fuzzy_score, edit_distance])
-
+                sequence_matcher, edit_distance  = calc_scores(query_normalized, term)     
+                results.append([term, sequence_matcher, ngram_truth, edit_distance])
         if more_information:
-            return results
-        
-        # Sort by combined score
+            return results        
         results.sort(key=lambda x: x[1], reverse=True)
         return results[0]
 

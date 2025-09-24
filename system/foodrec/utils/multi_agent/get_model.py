@@ -6,7 +6,6 @@
 
 from foodrec.llms.gemini import AnyGeminiLLM
 from foodrec.llms.open_source import OpenSource
-from foodrec.llms.schlaubox import Schlaubox
 from foodrec.llms.openai import AnyOpenAILLM
 from foodrec.config.structure.dataset_enum import ModelEnum
 
@@ -20,10 +19,6 @@ def _get_gpt_4omini(test):
 
 def get_gemini_pro(test):
     model = AnyGeminiLLM(model_name="gemini-2.5-pro", test=test)
-    return model
-
-def _get_llama3(test):
-    model = Schlaubox(test=test)
     return model
 
 def get_deepseek(test):
@@ -42,8 +37,6 @@ def get_model(model_name: ModelEnum, test=False):
         return _get_gpt_4omini(test)
     if model_name == ModelEnum.GEMINIPRO:
         return get_gemini_pro(test)
-    if model_name == ModelEnum.LLAMA:
-        return _get_llama3(test)
     if model_name == ModelEnum.DeepSeek:
         return get_deepseek(test)
     if model_name == ModelEnum.GPT_OPEN_SOURCE:
