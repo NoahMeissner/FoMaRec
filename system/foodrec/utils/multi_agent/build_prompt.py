@@ -7,7 +7,7 @@
 
 from foodrec.agents.agent_state import AgentState
 from typing import List
-from foodrec.utils.multi_agent.create_multi_agent_prompt import _build_available_data_summary, _build_completion_status, _build_reflections, _build_task_prompt
+from foodrec.utils.multi_agent.create_multi_agent_prompt import _build_available_data_summary, _build_reflections, _build_task_prompt
 from foodrec.config.prompts.load_prompt import PromptEnum, get_prompt
 from foodrec.agents.manager_steps import ManagerStep
 from foodrec.agents.agent_names import AgentEnum
