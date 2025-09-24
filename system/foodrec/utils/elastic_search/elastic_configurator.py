@@ -23,8 +23,6 @@ Following data categories:
 - embeddings
 - feature embeddings
 """
-
-from elasticsearch import Elasticsearch
 from foodrec.config.elastic.setup import database_structure
 
 

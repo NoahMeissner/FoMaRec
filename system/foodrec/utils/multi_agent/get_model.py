@@ -24,11 +24,6 @@ def get_gemini_pro(test):
 def get_deepseek(test):
     model = OpenSource(model_name="deepseek-r1", test=test)
     return model
-def get_gpt_open_source(test):
-    model = OpenSource(model_name="openai-gpt-oss-120b", test=test)
-    return model
-
-
 
 def get_model(model_name: ModelEnum, test=False):
     if model_name == ModelEnum.Gemini:
@@ -39,5 +34,3 @@ def get_model(model_name: ModelEnum, test=False):
         return get_gemini_pro(test)
     if model_name == ModelEnum.DeepSeek:
         return get_deepseek(test)
-    if model_name == ModelEnum.GPT_OPEN_SOURCE:
-        return get_gpt_open_source(test)

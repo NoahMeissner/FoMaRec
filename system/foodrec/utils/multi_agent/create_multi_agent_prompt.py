@@ -3,20 +3,8 @@
 """
 This class is responsible for creating the Multi Agent Prompt
 """
-
-from foodrec.agents.agent_state import AgentState
 import ast
-from typing import List, Optional, Set
-
-def _build_completion_status(state: AgentState) -> str:
-    """Build a clear status of what's already been completed."""
-    status_map = {
-        "task_interpreter": lambda: f"✓ Task interpreted: {state.task_description}",
-        "user_item_analyst": lambda: "✓ User analysis completed - all user preferences are known",
-        "searcher": lambda: f"✓ Search completed - {len(state.search_results)} results available" if isinstance(state.search_results, list) else "✓ Search completed",
-        "item_analyst": lambda: "✓ Item analysis completed"
-    }
-    return "\n".join(func() for agent, func in status_map.items() if agent in state.completed_agents and getattr(state, agent.replace("_", ""), None))
+from foodrec.agents.agent_state import AgentState
 
 def _build_available_data_summary(state: AgentState) -> str:
     """Build a summary of currently available data"""
