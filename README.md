@@ -1,4 +1,4 @@
-# Food Multi Agent Recommender System
+# Food Multi Agent Recommender System (FoMaRec)
 This project explores how expert dietary knowledge can be systematically integrated into **multi-agent systems (MAS)** to generate **personalized ketogenic recipe recommendations**.  
 
 Using the **MacRec framework**, we developed a two-stage architecture:
