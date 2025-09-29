@@ -4,9 +4,8 @@
     This class is responsible for the generation of the Thought Manager prompt
 """
 
-
-from foodrec.agents.agent_state import AgentState
 from typing import List
+from foodrec.agents.agent_state import AgentState
 from foodrec.utils.multi_agent.create_multi_agent_prompt import _build_available_data_summary, _build_reflections, _build_task_prompt
 from foodrec.config.prompts.load_prompt import PromptEnum, get_prompt
 from foodrec.agents.manager_steps import ManagerStep
@@ -61,7 +60,6 @@ def _allowed_actions(state: AgentState) -> List[str]:
     Always allow INTERPRETER and USER_ANALYST; progressively unlock the rest.
     """
     completed = {agent.lower() for agent in (state.completed_agents or [])}
-    # Start with the two that are always allowed
     if state.feedback != None and not state.is_final:
         return _get_post_rejection_allowed_actions(state, completed)
 
@@ -70,19 +68,15 @@ def _allowed_actions(state: AgentState) -> List[str]:
         allowed.append(AgentEnum.INTERPRETER.value)
     if AgentEnum.USER_ANALYST.value.lower() not in completed and AgentEnum.INTERPRETER.value.lower() in completed or state.run_count > 0:
         allowed.append(AgentEnum.USER_ANALYST.value)
-    # If user analysis is done, allow SEARCH
     if AgentEnum.USER_ANALYST.value.lower() in completed and state.last_completed_agent != AgentEnum.SEARCH.value:
         allowed.append(AgentEnum.SEARCH.value)
 
-    # If search is done, allow ITEM_ANALYST
     if AgentEnum.SEARCH.value.lower() in completed:
         allowed.append(AgentEnum.ITEM_ANALYST.value)
 
-    # If item analysis is done, allow REFLECTOR
     if AgentEnum.ITEM_ANALYST.value.lower() in completed:
         allowed.append(AgentEnum.REFLECTOR.value)
 
-    # If reflector is done, allow FINISH
     if AgentEnum.REFLECTOR.value.lower() in completed and state.is_final:
         allowed = [AgentEnum.FINISH.value]
 
@@ -127,8 +121,6 @@ def build_prompt_thought(state: AgentState) -> str:
             "scratchpad": _build_scratchpad(state, state.manager_steps),
             "allowed" : _allowed_actions(state)
         }
-    available_data = _build_available_data_summary(state)
-    completed_agents = state.completed_agents
     prompt = get_prompt(PromptEnum.THOUGHT, biased=state.biase)
     for key, value in sections.items():
         replacement_txt = f"{key} : {value}" if value != None else ""
@@ -150,7 +142,6 @@ def build_prompt_thought(state: AgentState) -> str:
         prompt += f"\n\n**Reflector Acceptance Status:**\n{state.is_final}\n"
     """
     
-    # Add explicit instruction about the cycle
     prompt = prompt.replace("$cycle$", """
 REMEMBER THE CYCLE:
 1. SEARCH (based on reflector feedback if rejected)

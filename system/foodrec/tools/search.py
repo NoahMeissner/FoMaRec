@@ -18,8 +18,6 @@ from foodrec.utils.data_preperation.recipe_embedding import RecipeEmbedder
 from foodrec.tools.request_elastic import request_elastic
 
 
-
-
 def process_information(information, normalizer: IngredientNormalisation):
     ingredients_avoid = [normalizer.normalize(obj)[0] for obj in information['ingredients_avoid']]
     ingredients_inclued = [normalizer.normalize(obj)[0] for obj in information['ingredients_included']]
