@@ -32,8 +32,11 @@ source venv/bin/activate   # (Linux/Mac)
 venv\Scripts\activate      # (Windows)
 pip install -r requirements.txt
 ```
-## Create .env
+## Edit .env
+Edit your Api Keys
 
+## Download Dataset
+Save it in the Config/dataset Folder
 
 ## Run main.py (create embeddings)
 ```bash
