@@ -1,4 +1,19 @@
 # Food Multi Agent Recommender System
+This project explores how expert dietary knowledge can be systematically integrated into **multi-agent systems (MAS)** to generate **personalized ketogenic recipe recommendations**.  
+
+Using the **MacRec framework**, we developed a two-stage architecture:
+1. **Knowledge-based pre-filter** – narrows down recipes according to evidence-based ketogenic guidelines.
+2. **Analyst & Reflector agents** – iteratively optimize recommendations to balance health goals and user preferences.
+
+This modular design provides:
+- **Transparency** – explicit control over the trade-off between health and user satisfaction.
+- **Personalization** – tailoring recipes while promoting keto compliance.
+- **Flexibility** – ability to adjust between strict adherence and broader recipe diversity.
+
+Our experiments show that this approach improves both **dietary compliance** and **recommendation accuracy**. While strict configurations maximize adherence, they reduce diversity and increase runtime — highlighting the trade-offs between **validity, diversity, and efficiency**.
+
+This repository provides the implementation and simulation code for experimenting with MAS-based, knowledge-driven dietary recommender systems.
+
 # Project Setup & Usage
 
 This repository contains code that runs on **Elasticsearch 8.17.4** inside Docker and provides two main entry points:  
