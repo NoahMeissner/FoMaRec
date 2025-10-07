@@ -5,7 +5,6 @@ This class is responsible for indexing the data into the database
 '''
 
 
-from foodrec.data.kochbar import KochbarLoader
 from foodrec.data.all_recipe import AllRecipeLoader
 
 from foodrec.utils.data_preperation.cuisine_classifier import CuisineClassifier
